@@ -10,16 +10,13 @@ const Vote = db.votes;
 
 const pollValidationRules = [
   body('title').notEmpty().withMessage('Title is required'),
-  body('description').notEmpty().withMessage('Description is required'),
   body('options').isArray({ min: 2 }).withMessage('At least two options are required'),
-  body('options.*.text').notEmpty().withMessage('Option text is required'),
-  body('setting.voices').isInt({ min: 1 }).withMessage('Voices should be an integer greater than 0'),
-  body('setting.worst').isBoolean().withMessage('Worst should be a boolean value'),
-  body('setting.deadline').isISO8601().withMessage('Deadline should be a valid ISO 8601 date format'),
+  // body('options.*.text').notEmpty().withMessage('Option text is required'),
+  // body('setting.worst').isBoolean().withMessage('Worst should be a boolean value'),
+  // body('setting.deadline').isISO8601().withMessage('Deadline should be a valid ISO 8601 date format'),
 ];
 
 
-// Create and Save new Polls
 const addPoll = async (req, res) => {
   // Check for validation errors
   const errors = validationResult(req);
@@ -48,41 +45,59 @@ const addPoll = async (req, res) => {
       }))
     );
 
-    const poll_setting = await Poll_setting.create({
-      voices: pollBody.setting.voices,
-      worst: pollBody.setting.worst,
-      deadline: pollBody.setting.deadline,
-      poll_id: poll.id
-    })
+    let poll_setting;
 
-    if (pollBody.fixed && Array.isArray(pollBody.fixed) && pollBody.fixed.length > 0) {
-      // Check if the 'fixed' attribute contains '0'
-      if (pollBody.fixed.includes(0)) {
-        // Create a 'Fixed_option' with just a 'poll_id'
-        await Fixed_option.create({
+if (pollBody.setting) {
+  poll_setting = await Poll_setting.create({
+    voices: pollBody.setting.voices,
+    worst: pollBody.setting.worst,
+    deadline: pollBody.setting.deadline,
+    poll_id: poll.id
+  })
+}
+
+if (pollBody.fixed && Array.isArray(pollBody.fixed) && pollBody.fixed.length > 0) {
+  // Check if the 'voices' attribute is '0'
+  if (poll_setting && poll_setting.voices === 0) {
+    // If 'voices' is '0', allow creating as many 'fixed_option' entries as there are options
+    const fixedOptions = await Promise.all(pollBody.fixed.map(optionId => {
+      const matchingOption = poll_options.find(option => option.id === optionId);
+      if (matchingOption) {
+        return Fixed_option.create({
           poll_id: poll.id,
+          option_id: matchingOption.id,
+          pollId: poll.id
         });
       } else {
-        // Check if the number of fixed options exceeds 'voices' in 'poll_setting'
-        if (pollBody.fixed.length > pollBody.setting.voices) {
-          throw new Error(`The number of fixed options exceeds the number of allowed voices.`);
-        } else {
-          // Create a 'Fixed_option' for each value in 'fixed', linking it to the corresponding 'poll_option' and 'poll'
-          const fixedOptions = await Promise.all(pollBody.fixed.map(optionId => {
-            const matchingOption = poll_options.find(option => option.id === optionId);
-            if (matchingOption) {
-              return Fixed_option.create({
-                poll_id: poll.id,
-                option_id: matchingOption.id,
-                pollId: poll.id
-              });
-            } else {
-              throw new Error(`Fixed option with id ${optionId} does not match any created poll option.`);
-            }
-          }));
-        }
+        throw new Error(`Fixed option with id ${optionId} does not match any created poll option.`);
       }
+    }));
+  } else if (pollBody.fixed.includes(0)) {
+    // Create a 'Fixed_option' with just a 'poll_id'
+    await Fixed_option.create({
+      poll_id: poll.id,
+    });
+  } else {
+    // Check if the number of fixed options exceeds 'voices' in 'poll_setting'
+    if (poll_setting && pollBody.fixed.length > poll_setting.voices) {
+      throw new Error(`The number of fixed options exceeds the number of allowed voices.`);
+    } else {
+      // Create a 'Fixed_option' for each value in 'fixed', linking it to the corresponding 'poll_option' and 'poll'
+      const fixedOptions = await Promise.all(pollBody.fixed.map(optionId => {
+        const matchingOption = poll_options.find(option => option.id === optionId);
+        if (matchingOption) {
+          return Fixed_option.create({
+            poll_id: poll.id,
+            option_id: matchingOption.id,
+            pollId: poll.id
+          });
+        } else {
+          throw new Error(`Fixed option with id ${optionId} does not match any created poll option.`);
+        }
+      }));
     }
+  }
+}
 
 
     // Generate a random string for the admin link and share link
@@ -116,13 +131,115 @@ const addPoll = async (req, res) => {
     });
 
   } catch (error) {
-    console.log(error);
     res.status(500).send({
       code: 500,
       message: 'Internal server error'
     });
   }
 };
+
+
+// Create and Save new Polls
+// const addPoll = async (req, res) => {
+//   // Check for validation errors
+//   const errors = validationResult(req);
+//   if (!errors.isEmpty()) {
+//     return res.status(405).json({ code: 405, message: 'Invalid input' });
+//   }
+
+//   let pollBody = {
+//     title: req.body.title,
+//     description: req.body.description,
+//     options: req.body.options,
+//     setting: req.body.setting,
+//     fixed: req.body.fixed
+//   }
+
+//   try {
+//     const poll = await Poll.create({
+//       title: pollBody.title,
+//       description: pollBody.description,
+//     })
+
+//     const poll_options = await Promise.all(
+//       pollBody.options.map(option => Poll_option.create({
+//         text: option.text,
+//         poll_id: poll.id,
+//       }))
+//     );
+
+//     const poll_setting = await Poll_setting.create({
+//       voices: pollBody.setting.voices,
+//       worst: pollBody.setting.worst,
+//       deadline: pollBody.setting.deadline,
+//       poll_id: poll.id
+//     })
+
+//     if (pollBody.fixed && Array.isArray(pollBody.fixed) && pollBody.fixed.length > 0) {
+//       // Check if the 'fixed' attribute contains '0'
+//       if (pollBody.fixed.includes(0)) {
+//         // Create a 'Fixed_option' with just a 'poll_id'
+//         await Fixed_option.create({
+//           poll_id: poll.id,
+//         });
+//       } else {
+//         // Check if the number of fixed options exceeds 'voices' in 'poll_setting'
+//         if (pollBody.fixed.length > pollBody.setting.voices) {
+//           throw new Error(`The number of fixed options exceeds the number of allowed voices.`);
+//         } else {
+//           // Create a 'Fixed_option' for each value in 'fixed', linking it to the corresponding 'poll_option' and 'poll'
+//           const fixedOptions = await Promise.all(pollBody.fixed.map(optionId => {
+//             const matchingOption = poll_options.find(option => option.id === optionId);
+//             if (matchingOption) {
+//               return Fixed_option.create({
+//                 poll_id: poll.id,
+//                 option_id: matchingOption.id,
+//                 pollId: poll.id
+//               });
+//             } else {
+//               throw new Error(`Fixed option with id ${optionId} does not match any created poll option.`);
+//             }
+//           }));
+//         }
+//       }
+//     }
+//     // Generate a random string for the admin link and share link
+//     const adminTokenValue = crypto.randomBytes(16).toString("hex");
+//     const shareTokenValue = crypto.randomBytes(16).toString("hex");
+
+//     // Create tokens for the admin link and share link
+//     const adminToken = await Token.create({
+//       link: "admin", //!link korregieren
+//       value: adminTokenValue,
+//       poll_id: poll.id,
+//       token_type: "admin"
+//     })
+
+//     const shareToken = await Token.create({
+//       link: "share", //!link korregieren
+//       value: shareTokenValue,
+//       poll_id: poll.id,
+//       token_type: "share"
+//     })
+
+//     res.status(200).send({
+//       admin: {
+//         link: "admin",
+//         value: adminToken.value
+//       },
+//       share: {
+//         link: "share",
+//         value: shareToken.value
+//       }
+//     });
+
+//   } catch (error) {
+//     res.status(500).send({
+//       code: 500,
+//       message: 'Internal server error'
+//     });
+//   }
+// };
 
 const pollUpdateValidationRules = [
   body('title').notEmpty().withMessage('Title is required'),
@@ -337,23 +454,23 @@ const getPollStatistics = async (req, res) => {
       raw: true,
     });
 
-   // Group votes by option
-const votesByOption = votes.reduce((groups, vote) => {
-  const groupId = vote.poll_option_id;
-  if (!groups[groupId]) {
-    groups[groupId] = {
-      voted: [],
-      worst: [],
-    };
-  }
-  // Add the vote to the voted array in all cases
-  groups[groupId].voted.push(vote.user_id);
-  // If the vote is marked as worst, also add it to the worst array
-  if (vote.worst) {
-    groups[groupId].worst.push(vote.user_id);
-  }
-  return groups;
-}, {});
+    // Group votes by option
+    const votesByOption = votes.reduce((groups, vote) => {
+      const groupId = vote.poll_option_id;
+      if (!groups[groupId]) {
+        groups[groupId] = {
+          voted: [],
+          worst: [],
+        };
+      }
+      // Add the vote to the voted array in all cases
+      groups[groupId].voted.push(vote.user_id);
+      // If the vote is marked as worst, also add it to the worst array
+      if (vote.worst) {
+        groups[groupId].worst.push(vote.user_id);
+      }
+      return groups;
+    }, {});
 
 
     // Fetch options and append votes
@@ -381,10 +498,10 @@ const votesByOption = votes.reduce((groups, vote) => {
             text: option.text,
           })),
           setting: poll.setting,
-          fixed: (!poll.fixed || poll.fixed.includes(null)) 
-        ? [0] 
-        : poll.fixed.map((fixedOption) => fixedOption.option_id || 0),
-       },
+          fixed: (!poll.fixed || poll.fixed.includes(null))
+            ? [0]
+            : poll.fixed.map((fixedOption) => fixedOption.option_id || 0),
+        },
         share: {
           link: "share",
           value: token.value,
@@ -393,7 +510,7 @@ const votesByOption = votes.reduce((groups, vote) => {
       participants: participants.map((participant) => ({ name: participant.name })),
       options: formattedOptions,
     });
-    
+
   } catch (error) {
     console.log(error);
     res.status(500).send({ code: 500, message: "Internal server error" });
