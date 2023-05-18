@@ -7,7 +7,7 @@ const {addPoll, getPollStatistics, updatePoll,
 
 router.post("/lack",pollValidationRules, addPoll);
 
-router.get("/lack/pollList", getPollList);
+// router.get("/lack/pollList", getPollList);
 
 router.get("/lack/:token", getPollStatistics);
 
