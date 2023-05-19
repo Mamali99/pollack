@@ -11,10 +11,11 @@ const { body, validationResult } = require('express-validator');
 
 
 const voteValidationRules = [
+  body('owner').notEmpty().withMessage('Owner is required'),
   body('owner.name').notEmpty().withMessage('Owner name is required'),
   body('choice').isArray({ min: 1 }).withMessage('At least one choice is required'),
   body('choice.*.id').isInt().withMessage('Choice id is required and should be an integer'),
-  body('choice.*.worst').isBoolean().withMessage('Worst should be a boolean value'),
+  // body('choice.*.worst').isBoolean().withMessage('Worst should be a boolean value'),
 ];
 
 // Add a new vote to the poll
@@ -25,7 +26,7 @@ const addVote = async (req, res) => {
   // Check for validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(405).json({ code: 405, message: 'Invalid input' });
+    return res.status(400).json({ errors: errors.array() });
   }
 
   try {
@@ -42,12 +43,27 @@ const addVote = async (req, res) => {
     }
 
     const pollSettings = await Poll_setting.findOne({ where: { poll_id: poll.id } });
-    const fixedOptions = await Fixed_option.findAll({ where: { poll_id: poll.id } });
 
-    if (choice.length > pollSettings.voices + fixedOptions.length) {
-      return res.status(405).json({ code: 405, message: 'Number of choices exceeds allowed voices' });
+    // Check if 'voices' is defined in settings and if 'voices' is not matching with the number of choices, return an error
+    if (pollSettings && pollSettings.voices) {
+      if (pollSettings.voices === 1 && choice.length > 1) {
+        return res.status(400).json({ code: 400, message: 'This poll allows only single choice.' });
+      } else if (pollSettings.voices === 0 && choice.length < 2) {
+        return res.status(400).json({ code: 400, message: 'This poll allows multiple choices.' });
+      } else if (pollSettings.voices > 1 && choice.length > pollSettings.voices) {
+        return res.status(400).json({ code: 400, message: `This poll allows only ${pollSettings.voices} choices.` });
+      }
     }
 
+    // Check if 'worst' is defined in settings and if 'worst' is not true in the request, return an error
+    if (pollSettings && pollSettings.worst !== true && choice.some(c => c.worst === true)) {
+      return res.status(400).json({ code: 400, message: 'Setting "worst" is disabled for this poll.' });
+    }
+
+    // Check if 'deadline' is defined in settings and if current date exceeds 'deadline', return an error
+    if (pollSettings && pollSettings.deadline && new Date() > new Date(pollSettings.deadline)) {
+      return res.status(400).json({ code: 400, message: 'Voting deadline has passed.' });
+    }
     // Check if the user already exists, create new if not
     let user = await User.findOne({ where: { name: owner.name } });
     if (!user) {
@@ -58,11 +74,18 @@ const addVote = async (req, res) => {
 
     const pollOptionIds = await Poll_option.findAll({ where: { poll_id: poll.id }, attributes: ['id'] }).map(option => option.id);
 
-    for (const { id } of choice) {
-      if (!pollOptionIds.includes(id)) {
-        return res.status(405).json({ code: 405, message: `Invalid option id: ${id}` });
+    if (pollSettings) {
+      for (const { id, worst } of choice) {
+        if (!pollOptionIds.includes(id)) {
+          return res.status(400).json({ code: 400, message: `Invalid option id: ${id}` });
+        }
+
+        if (worst != null && pollSettings.worst === 0 && worst) {
+          return res.status(400).json({ code: 400, message: `Setting "worst" is disabled for this poll.` });
+        }
       }
     }
+
 
     const votePromises = choice.map(({ id, worst }) =>
       Vote.create({
@@ -72,13 +95,13 @@ const addVote = async (req, res) => {
         worst: worst || false,
       })
     );
-    const votes = await Promise.all(votePromises);
+    await Promise.all(votePromises);
 
     // Generate a random string for the edit token for user
     const editTokenValue = crypto.randomBytes(16).toString("hex");
 
     // Create tokens for the admin link and share link
-    const editToken = await Token.create({
+    await Token.create({
       link: "edit",
       value: editTokenValue,
       poll_id: poll.id,
@@ -86,7 +109,7 @@ const addVote = async (req, res) => {
       user_id: user.id
     });
 
-    res.status(200).json({
+    res.status(201).json({
       edit: {
         link: '/vote/edit/' + editTokenValue,
         value: editTokenValue,
@@ -94,7 +117,7 @@ const addVote = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in addVote:', error);
-    res.status(405).json({ code: 405, message: 'Invalid input' });
+    res.status(400).json({ code: 400, message: 'Invalid input' });
   }
 };
 
@@ -112,15 +135,15 @@ const findVote = async (req, res) => {
     const poll = await Poll.findByPk(token.poll_id, {
       include: [
         {
-          model: Poll_option, 
+          model: Poll_option,
           as: 'options',
         },
         {
-          model: Poll_setting, 
+          model: Poll_setting,
           as: 'setting',
         },
         {
-          model: Fixed_option, 
+          model: Fixed_option,
           as: 'fixed',
         },
       ],
@@ -140,26 +163,20 @@ const findVote = async (req, res) => {
 
     const shareToken = await Token.findOne({ where: { poll_id: poll.id, token_type: "share" } });
 
-    const voteInfo = {
+    // Create the base voteInfo object in the desired order
+    let voteInfo = {
       poll: {
         body: {
           title: poll.title,
-          description: poll.description,
           options: poll.options.map(option => ({
             id: option.id,
             text: option.text
           })),
-          setting: {
-            voices: poll.setting.voices,
-            worst: poll.setting.worst,
-            deadline: poll.setting.deadline
-          },
-          fixed: poll.fixed ? poll.fixed.map(option => option && option.option_id ? option.option_id : 0) : [0],
         },
         share: {
           link: '/vote/lack/' + shareToken.value,
           value: shareToken.value,
-        },
+        }
       },
       vote: {
         owner: {
@@ -173,12 +190,29 @@ const findVote = async (req, res) => {
       time: votes[0] ? votes[0].createdAt.toISOString() : new Date().toISOString(),
     };
 
+    // Assign optional fields if they exist
+    if (poll.description) {
+      voteInfo.poll.body.description = poll.description;
+    }
+    if (poll.setting) {
+      voteInfo.poll.body.setting = {
+        voices: poll.setting.voices,
+        worst: poll.setting.worst,
+        deadline: poll.setting.deadline
+      };
+    }
+    if (poll.fixed && poll.fixed.length) {
+      voteInfo.poll.body.fixed = poll.fixed.map(option => option && option.option_id ? option.option_id : 0);
+    }
+
     res.status(200).json(voteInfo);
   } catch (error) {
     console.error('Error in findVote:', error);
     res.status(405).json({ code: 405, message: 'Invalid input' });
   }
 };
+
+
 
 //Update a vote of the token
 const updateVote = async (req, res) => {
@@ -268,8 +302,8 @@ const deleteVote = async (req, res) => {
     await Promise.all(deleteVotesPromises);
 
     // After all votes are deleted, delete the user and token.
-    await user.destroy();
-    await token.destroy();
+    // await user.destroy();
+    // await token.destroy();
 
     res.status(200).json({ code: 200, message: 'i. O.' });
   } catch (error) {
@@ -280,4 +314,4 @@ const deleteVote = async (req, res) => {
 
 
 
-module.exports = { addVote, findVote, updateVote, deleteVote,voteValidationRules }
+module.exports = { addVote, findVote, updateVote, deleteVote, voteValidationRules }

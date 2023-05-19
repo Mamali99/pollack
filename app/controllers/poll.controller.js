@@ -29,7 +29,7 @@ const addPoll = async (req, res) => {
     });
 
     const pollOptions = await Promise.all(
-      options.map(option => Poll_option.create({ text: option.text, poll_id: poll.id }))
+      options.map(option => Poll_option.create({ id: option.id, text: option.text, poll_id: poll.id }))
     );
 
     let pollSetting;
@@ -148,10 +148,12 @@ const updatePoll = async (req, res) => {
     for (const option of options) {
       let pollOption = await Poll_option.findOne({ where: { poll_id: pollId, id: option.id } });
       if (pollOption) {
+        pollOption.id = option.id;
         pollOption.text = option.text;
         await pollOption.save();
       } else {
         await Poll_option.create({
+          id: option.id,
           text: option.text,
           poll_id: poll.id,
         });
@@ -204,99 +206,6 @@ const updatePoll = async (req, res) => {
       message: 'Internal server error'
     });
   }
-
-  // try {
-  //   const token = await Token.findOne({
-  //     where: { value: tokenValue, token_type: "admin" }
-  //   });
-
-  //   if (!token) {
-  //     res.status(404).send({ code: 404, message: "Poll not found." });
-  //     return;
-  //   }
-
-  //   const pollId = token.poll_id;
-
-  //   await Poll.update({
-  //     title: pollBody.title,
-  //     description: pollBody.description
-  //   }, {
-  //     where: { id: pollId }
-  //   });
-
-  //   if (pollBody.setting) {
-  //     const pollSetting = await Poll_setting.findOne({ where: { poll_id: pollId } });
-  //     if (!pollSetting) {
-  //       throw new Error(`Poll setting not found for poll id ${pollId}`);
-  //     }
-  //     await pollSetting.update({
-  //       voices: pollBody.setting.voices,
-  //       worst: pollBody.setting.worst,
-  //       deadline: pollBody.setting.deadline
-  //     });
-  //   }
-
-  //   let existingOptions = await Poll_option.findAll({ where: { poll_id: pollId } });
-
-  //   let existingOptionsMap = new Map();
-  //   existingOptions.forEach(option => existingOptionsMap.set(option.id, option));
-
-
-
-  //   for (let option of pollBody.options) {
-  //     let existingOption = existingOptionsMap.get(option.id);
-
-  //     if (existingOption) {
-  //       // Update the existing option
-  //       await existingOption.update({ text: option.text });
-
-  //       // Remove the option from the map
-  //       existingOptionsMap.delete(option.id);
-  //     } else {
-  //       // Create a new option
-  //       await Poll_option.create({
-  //         text: option.text,
-  //         poll_id: pollId,
-  //       });
-  //     }
-  //   }
-  //   for (let remainingOption of existingOptionsMap.values()) {
-  //     await remainingOption.destroy();
-  //   }
-
-  //   let existingFixedOptions = await Fixed_option.findAll({ where: { poll_id: pollId } });
-
-  //   // First, destroy all existing fixed options for this poll
-  //   await Fixed_option.destroy({ where: { poll_id: pollId } });
-
-  //   if (pollBody.fixed && Array.isArray(pollBody.fixed) && pollBody.fixed.length > 0) {
-  //     // Check if the 'fixed' attribute contains '0'
-  //     if (!pollBody.fixed.includes(0)) {
-  //       // Check if the number of fixed options exceeds 'voices' in 'poll_setting'
-  //       if (pollBody.fixed.length > pollBody.setting.voices) {
-  //         throw new Error(`The number of fixed options exceeds the number of allowed voices.`);
-  //       } else {
-  //         // Create a 'Fixed_option' for each value in 'fixed', linking it to the corresponding 'poll_option' and 'poll'
-  //         for (let optionId of pollBody.fixed) {
-  //           const pollOption = await Poll_option.findOne({ where: { id: optionId, poll_id: pollId } });
-  //           if (!pollOption) {
-  //             throw new Error(`Poll option with id ${optionId} does not exist.`);
-  //           }
-  //           await Fixed_option.create({
-  //             poll_id: pollId,
-  //             option_id: optionId,
-  //           });
-  //         }
-  //       }
-  //     }
-  //   }
-
-  //   res.status(200).send({ code: 200, message: "i. O." });
-
-  // } catch (error) {
-  //   console.log(error);
-  //   res.status(500).send({ code: 500, message: "Internal server error" });
-  // }
 };
 
 
@@ -329,7 +238,6 @@ const deletePoll = async (req, res) => {
 
     // Delete votes where the option_id is in pollOptionIds
     await Vote.destroy({ where: { poll_option_id: pollOptionIds } });
-
     await Poll_option.destroy({ where: { poll_id: pollId } });
     await Poll_setting.destroy({ where: { poll_id: pollId } });
     await Token.destroy({ where: { poll_id: pollId } });
@@ -348,6 +256,7 @@ const deletePoll = async (req, res) => {
     });
   }
 };
+
 
 const getPollStatistics = async (req, res) => {
   const tokenValue = req.params.token;
@@ -370,6 +279,14 @@ const getPollStatistics = async (req, res) => {
         {
           model: db.polls_options,
           as: 'options',
+        },
+        {
+          model: Poll_setting,
+          as: 'setting',
+        },
+        {
+          model: Fixed_option,
+          as: 'fixed',
         },
       ],
     });
@@ -411,10 +328,10 @@ const getPollStatistics = async (req, res) => {
 
       // Check if 'voted' and 'worst' arrays are empty, and if so, set them to contain a single '0'
       if (optionVotes.voted.length === 0) {
-        optionVotes.voted = [0];
+        optionVotes.voted = [];
       }
       if (optionVotes.worst.length === 0) {
-        optionVotes.worst = [0];
+        optionVotes.worst = [];
       }
 
       return {
@@ -423,30 +340,18 @@ const getPollStatistics = async (req, res) => {
       };
     });
 
-
-    // Before sending the response, make sure that all the required fields are present
-    if (!poll || !participants || !formattedOptions || !poll.title || !poll.options || !token.value) {
-      res.status(500).send({ code: 500, message: "Required fields are missing" });
-      return;
-    }
-
-    // Ensure all participants have names
-    if (participants.some(participant => !participant.name)) {
-      res.status(500).send({ code: 500, message: "Some participants are missing names" });
-      return;
-    }
-
-    // Ensure all options have 'voted' array
-    if (formattedOptions.some(option => !option.voted)) {
-      res.status(500).send({ code: 500, message: "Some options are missing 'voted' array" });
-      return;
-    }
-
-    // Ensure all 'options' in 'poll' have 'id' and 'text'
-    if (poll.options.some(option => !(option.id && option.text))) {
-      res.status(500).send({ code: 500, message: "Some options in 'poll' are missing 'id' or 'text'" });
-      return;
-    }
+    // Prepare optional fields
+    let optionalFields = {
+      description: poll.description || poll.description === "" ? null : poll.description,
+      setting: {
+        voices: poll.setting && poll.setting.voices ? poll.setting.voices : null,
+        // worst: poll.setting && poll.setting.worst ? poll.setting.worst : 0,
+        worst: poll.setting ? Boolean(poll.setting.worst) : false, // Converted to boolean
+        deadline: poll.setting && poll.setting.deadline ? new Date(poll.setting.deadline).toISOString() : null,
+      },
+      fixed: poll.fixed && poll.fixed.length > 0 ? poll.fixed.map((fixedOption) => fixedOption.option_id || 0).filter(id => id !== 0) : []
+    
+    };
 
     // The response body
     const responseBody = {
@@ -457,25 +362,16 @@ const getPollStatistics = async (req, res) => {
             id: option.id,
             text: option.text,
           })),
-          // Optional fields
-          description: poll.description || null,
-          setting: poll.setting ? {
-            voices: poll.setting.voices || 1,
-            worst: poll.setting.worst || false,
-            deadline: poll.setting.deadline || null,
-          } : null,
-          fixed: (!poll.fixed || poll.fixed.includes(null)) ? [] : poll.fixed.map((fixedOption) => fixedOption.option_id || 0).filter(id => id !== 0),
+          ...optionalFields,
         },
         share: {
           link: "share",
           value: token.value,
         },
       },
-      participants: participants.map((participant) => ({ name: participant.name })),
+      participants: participants.length ? participants.map((participant) => ({ name: participant.name })) : [],
       options: formattedOptions,
     };
-
-
 
     res.status(200).send(responseBody);
 
@@ -484,6 +380,7 @@ const getPollStatistics = async (req, res) => {
     res.status(500).send({ code: 500, message: "Internal server error" });
   }
 };
+
 
 
 
