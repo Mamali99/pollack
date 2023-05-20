@@ -53,7 +53,7 @@ const addVote = async (req, res) => {
     if (pollSettings && pollSettings.voices) {
       if (pollSettings.voices === 1 && choice.length > 1) {
         return res.status(400).json({ code: 400, message: 'This poll allows only single choice.' });
-      } else if (pollSettings.voices === 0 && choice.length < 2) {
+      } else if (pollSettings.voices === 0 && choice.length < 2) { //!brauchen wir es???
         return res.status(400).json({ code: 400, message: 'This poll allows multiple choices.' });
       } else if (pollSettings.voices > 1 && choice.length > pollSettings.voices) {
         return res.status(400).json({ code: 400, message: `This poll allows only ${pollSettings.voices} choices.` });

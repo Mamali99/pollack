@@ -27,7 +27,7 @@ const addPoll = async (req, res) => {
 
   const { title, description, options, setting, fixed } = req.body;
 
-  //!before ein Poll erstellt, muss man checken, ob alle andere fields richtig sind. sonst erstellt ein Teil von Poll
+  //!befÜr ein Poll erstellt, muss man checken, ob alle andere fields richtig sind. sonst erstellt ein Teil von Poll
   try {
     const poll = await Poll.create({
       title,
@@ -490,7 +490,7 @@ const getPollStatistics = async (req, res) => {
         // worst: poll.setting && poll.setting.worst ? poll.setting.worst : 0,
         worst: poll.setting ? Boolean(poll.setting.worst) : false, // Converted to boolean
         deadline: poll.setting && poll.setting.deadline ? new Date(poll.setting.deadline).toISOString() : null,
-      },
+      },//!wenn die Liste leer ist, soll leere liste zurückgeben oder null?
       fixed: poll.fixed && poll.fixed.length > 0 ? poll.fixed.map((fixedOption) => fixedOption.option_id || 0).filter(id => id !== 0) : []
 
     };
