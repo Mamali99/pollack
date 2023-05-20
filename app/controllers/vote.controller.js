@@ -20,7 +20,7 @@ const voteValidationRules = [
 
 // Function to format date to remove trailing "Z" and timezone offset
 const formatDateTime = (date) => {
-  return date ? date.toISOString().slice(0,19) : new Date().toISOString().slice(0,19);
+  return date ? date.toISOString().slice(0, 19) : new Date().toISOString().slice(0, 19);
 };
 
 // Add a new vote to the poll
@@ -223,6 +223,67 @@ const findVote = async (req, res) => {
 
 
 
+// //Update a vote of the token
+// const updateVote = async (req, res) => {
+//   const tokenValue = req.params.token;
+//   const { owner, choice } = req.body;
+
+//   try {
+//     const token = await Token.findOne({ where: { value: tokenValue, token_type: "edit" } });
+
+//     if (!token) {
+//       return res.status(404).json({ code: 404, message: 'Token not found' });
+//     }
+
+//     const poll = await Poll.findByPk(token.poll_id);
+
+//     if (!poll) {
+//       return res.status(404).json({ code: 404, message: 'Poll not found' });
+//     }
+
+//     const user = await User.findOne({ where: { name: owner.name } });
+
+//     if (!user) {
+//       return res.status(404).json({ code: 404, message: 'User not found' });
+//     }
+
+//     // Fetch all existing votes
+//     const existingVotes = await Vote.findAll({
+//       where: { user_id: user.id, poll_id: poll.id },
+//     });
+
+//     // Filter out the votes that are no longer in the choice
+//     const votesToDelete = existingVotes.filter((vote) => {
+//       return !choice.some(({ id }) => vote.poll_option_id === id);
+//     });
+
+//     // Delete the votes that are no longer in the choice
+//     const deletePromises = votesToDelete.map((vote) => vote.destroy());
+//     await Promise.all(deletePromises);
+
+//     // Create new votes for choices that didn't exist before
+//     const newVotesToCreate = choice.filter(({ id }) => {
+//       return !existingVotes.some((vote) => vote.poll_option_id === id);
+//     });
+
+//     const createPromises = newVotesToCreate.map(({ id, worst }) => {
+//       return Vote.create({
+//         user_id: user.id,
+//         poll_id: poll.id,
+//         poll_option_id: id,
+//         worst: worst || false,
+//         createdAt: new Date().toISOString().slice(0, 19) //! new eingefügt
+//       });
+//     });
+
+//     await Promise.all(createPromises);
+
+//     res.status(200).json({ code: 200, message: 'i. O.' });
+//   } catch (error) {
+//     console.error('Error in updateVote:', error);
+//     res.status(405).json({ code: 405, message: 'Invalid input' });
+//   }
+// };
 //Update a vote of the token
 const updateVote = async (req, res) => {
   const tokenValue = req.params.token;
@@ -252,31 +313,49 @@ const updateVote = async (req, res) => {
       where: { user_id: user.id, poll_id: poll.id },
     });
 
-    // Filter out the votes that are no longer in the choice
-    const votesToDelete = existingVotes.filter((vote) => {
-      return !choice.some(({ id }) => vote.poll_option_id === id);
-    });
+    // Iterate over each choice in the request body
+    for (const { id, worst } of choice) {
+      const existingVote = existingVotes.find(vote => vote.poll_option_id === id);
 
-    // Delete the votes that are no longer in the choice
-    const deletePromises = votesToDelete.map((vote) => vote.destroy());
-    await Promise.all(deletePromises);
-
-    // Create new votes for choices that didn't exist before
-    const newVotesToCreate = choice.filter(({ id }) => {
-      return !existingVotes.some((vote) => vote.poll_option_id === id);
-    });
-
-    const createPromises = newVotesToCreate.map(({ id, worst }) => {
-      return Vote.create({
-        user_id: user.id,
-        poll_id: poll.id,
-        poll_option_id: id,
-        worst: worst || false,
-        createdAt: new Date().toISOString().slice(0, 19) //! new eingefügt
-      });
-    });
-
-    await Promise.all(createPromises);
+      if (existingVote) {
+        // If the vote already exists, update it
+        // But check if 'worst' field is true for this poll
+        if (poll.setting && poll.setting.worst) {
+          await existingVote.update({
+            worst: worst || false
+          });
+        } else if (!worst) {
+          // If 'worst' field is not true for this poll, update without it
+          await existingVote.update({});
+        } else {
+          // If 'worst' field is not true for this poll, and user tries to set it, throw an error
+          return res.status(400).json({ code: 400, message: "'Worst' option is not allowed for this poll." });
+        }
+      } else {
+        // If the vote doesn't exist, create it
+        // But check if 'worst' field is true for this poll
+        if (poll.setting && poll.setting.worst) {
+          await Vote.create({
+            user_id: user.id,
+            poll_id: poll.id,
+            poll_option_id: id,
+            worst: worst || false,
+            createdAt: new Date().toISOString().slice(0, 19)
+          });
+        } else if (!worst) {
+          // If 'worst' field is not true for this poll, create without it
+          await Vote.create({
+            user_id: user.id,
+            poll_id: poll.id,
+            poll_option_id: id,
+            createdAt: new Date().toISOString().slice(0, 19)
+          });
+        } else {
+          // If 'worst' field is not true for this poll, and user tries to set it, throw an error
+          return res.status(400).json({ code: 400, message: "'Worst' option is not allowed for this poll." });
+        }
+      }
+    }
 
     res.status(200).json({ code: 200, message: 'i. O.' });
   } catch (error) {
@@ -284,6 +363,7 @@ const updateVote = async (req, res) => {
     res.status(405).json({ code: 405, message: 'Invalid input' });
   }
 };
+
 
 // Delete a vote of the token
 const deleteVote = async (req, res) => {

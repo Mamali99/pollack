@@ -27,6 +27,7 @@ const addPoll = async (req, res) => {
 
   const { title, description, options, setting, fixed } = req.body;
 
+  //!before ein Poll erstellt, muss man checken, ob alle andere fields richtig sind. sonst erstellt ein Teil von Poll
   try {
     const poll = await Poll.create({
       title,
@@ -383,6 +384,7 @@ const deletePoll = async (req, res) => {
     await Token.destroy({ where: { poll_id: pollId } });
     await Fixed_option.destroy({ where: { poll_id: pollId } });
     await Poll.destroy({ where: { id: pollId } });
+    //!sollen wir User auch löschen?
 
     res.status(200).send({
       code: 200,
@@ -482,7 +484,7 @@ const getPollStatistics = async (req, res) => {
 
     // Prepare optional fields
     let optionalFields = {
-      description: (!poll.description || poll.description === "") ? null : poll.description,
+      description: (!poll.description || poll.description === "") ? null : poll.description, //!new change hier
       setting: {
         voices: poll.setting && poll.setting.voices ? poll.setting.voices : null,
         // worst: poll.setting && poll.setting.worst ? poll.setting.worst : 0,
