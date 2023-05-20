@@ -9,7 +9,6 @@ const Fixed_option = db.fixed_options;
 const crypto = require("crypto");
 const { body, validationResult } = require('express-validator');
 
-
 const voteValidationRules = [
   body('owner').notEmpty().withMessage('Owner is required'),
   body('owner.name').notEmpty().withMessage('Owner name is required'),
@@ -17,6 +16,12 @@ const voteValidationRules = [
   body('choice.*.id').isInt().withMessage('Choice id is required and should be an integer'),
   // body('choice.*.worst').isBoolean().withMessage('Worst should be a boolean value'),
 ];
+
+
+// Function to format date to remove trailing "Z" and timezone offset
+const formatDateTime = (date) => {
+  return date ? date.toISOString().slice(0,19) : new Date().toISOString().slice(0,19);
+};
 
 // Add a new vote to the poll
 const addVote = async (req, res) => {
@@ -93,6 +98,7 @@ const addVote = async (req, res) => {
         poll_option_id: id,
         poll_id: poll.id,
         worst: worst || false,
+        createdAt: new Date().toISOString().slice(0, 19) //! new eingefügt
       })
     );
     await Promise.all(votePromises);
@@ -187,7 +193,10 @@ const findVote = async (req, res) => {
           worst: vote.worst,
         })),
       },
-      time: votes[0] ? votes[0].createdAt.toISOString() : new Date().toISOString(),
+      // time: votes[0] ? votes[0].createdAt.toISOString() : new Date().toISOString(),
+      time: undefined,
+      // time: votes[0] ? votes[0].createdAt.toISOString().slice(0,19) : new Date().toISOString().slice(0,19),
+      // time: formatDateTime(votes[0] && votes[0].createdAt), //!new eingefügt
     };
 
     // Assign optional fields if they exist
@@ -263,6 +272,7 @@ const updateVote = async (req, res) => {
         poll_id: poll.id,
         poll_option_id: id,
         worst: worst || false,
+        createdAt: new Date().toISOString().slice(0, 19) //! new eingefügt
       });
     });
 
@@ -303,7 +313,7 @@ const deleteVote = async (req, res) => {
 
     // After all votes are deleted, delete the user and token.
     // await user.destroy();
-    // await token.destroy();
+    await token.destroy();
 
     res.status(200).json({ code: 200, message: 'i. O.' });
   } catch (error) {

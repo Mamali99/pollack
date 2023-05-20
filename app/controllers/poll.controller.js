@@ -8,6 +8,11 @@ const Fixed_option = db.fixed_options;
 const crypto = require("crypto");
 const Vote = db.votes;
 
+// Function to format date to remove trailing "Z"
+const formatDateTime = (date) => {
+  return date ? date.toISOString().slice(0,19) : new Date().toISOString().slice(0,19);
+};
+
 const pollValidationRules = [
   body('title').notEmpty().withMessage('Title is required'),
   body('options').isArray({ min: 2 }).withMessage('At least two options are required'),
