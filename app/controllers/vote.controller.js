@@ -392,7 +392,7 @@ const deleteVote = async (req, res) => {
     await Promise.all(deleteVotesPromises);
 
     // After all votes are deleted, delete the user and token.
-    // await user.destroy();
+    await user.destroy();
     await token.destroy();
 
     res.status(200).json({ code: 200, message: 'i. O.' });
