@@ -7,11 +7,10 @@ const Token = db.tokens;
 const Fixed_option = db.fixed_options;
 const crypto = require("crypto");
 const Vote = db.votes;
+const User = db.users;
 
-// Function to format date to remove trailing "Z"
-const formatDateTime = (date) => {
-  return date ? date.toISOString().slice(0, 19) : new Date().toISOString().slice(0, 19);
-};
+
+
 
 const pollValidationRules = [
   body('title').notEmpty().withMessage('Title is required'),
@@ -44,6 +43,7 @@ const addPoll = async (req, res) => {
         ...setting,
         poll_id: poll.id
       });
+      
     }
 
     if (fixed && Array.isArray(fixed) && fixed.length > 0 && fixed[0] !== null && fixed[0] !== 0) {
@@ -79,9 +79,10 @@ const addPoll = async (req, res) => {
       token_type: "share"
     });
 
+
     res.status(200).send({
       admin: {
-        link: "admin",
+        link: "admin", //! Richtige Linke für Frontend nutzen
         value: adminToken.value
       },
       share: {
@@ -91,7 +92,6 @@ const addPoll = async (req, res) => {
     });
 
   } catch (error) {
-    console.log(error)
     res.status(500).send({
       code: 500,
       message: 'Internal server error'
@@ -297,6 +297,7 @@ const updatePoll = async (req, res) => {
           ...setting,
           poll_id: poll.id
         });
+
       }
     } else {
       // If setting does not exist in the request, remove existing settings
@@ -336,14 +337,12 @@ const updatePoll = async (req, res) => {
     }
 
 
-
     res.status(200).json({
       code: 200,
       message: 'Poll updated successfully'
     });
 
   } catch (error) {
-    console.error(error);  // add this line
     res.status(500).send({
       code: 500,
       message: 'Internal server error'
@@ -351,6 +350,53 @@ const updatePoll = async (req, res) => {
   }
 };
 
+// const deletePoll = async (req, res) => {
+//   const tokenValue = req.params.token;
+
+//   try {
+//     const token = await Token.findOne({
+//       where: {
+//         value: tokenValue,
+//         token_type: 'admin',
+//       },
+//     });
+
+//     if (!token) {
+//       return res.status(400).send({
+//         code: 400,
+//         message: 'Invalid poll admin token.',
+//       });
+//     }
+
+//     const pollId = token.poll_id;
+
+//     // Fetch the poll options associated with the poll
+//     const pollOptions = await Poll_option.findAll({ where: { poll_id: pollId } });
+
+//     // Extract the ids of the poll options
+//     const pollOptionIds = pollOptions.map(option => option.id);
+
+//     // Delete votes where the option_id is in pollOptionIds
+//     await Vote.destroy({ where: { poll_option_id: pollOptionIds } });
+//     await Poll_option.destroy({ where: { poll_id: pollId } });
+//     await Poll_setting.destroy({ where: { poll_id: pollId } });
+//     await Token.destroy({ where: { poll_id: pollId } });
+//     await Fixed_option.destroy({ where: { poll_id: pollId } });
+//     await Poll.destroy({ where: { id: pollId } });
+//     //!sollen wir User auch löschen?
+
+//     res.status(200).send({
+//       code: 200,
+//       message: 'i. O.',
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(404).send({
+//       code: 404,
+//       message: 'Poll not found.',
+//     });
+//   }
+// };
 const deletePoll = async (req, res) => {
   const tokenValue = req.params.token;
 
@@ -377,27 +423,36 @@ const deletePoll = async (req, res) => {
     // Extract the ids of the poll options
     const pollOptionIds = pollOptions.map(option => option.id);
 
+    // Get the votes where the option_id is in pollOptionIds
+    const votes = await Vote.findAll({ where: { poll_option_id: pollOptionIds } });
+
+    // Extract the ids of the users who voted
+    const userIds = votes.map(vote => vote.user_id);
+
     // Delete votes where the option_id is in pollOptionIds
     await Vote.destroy({ where: { poll_option_id: pollOptionIds } });
+
+    // Delete users who voted in this poll
+    await User.destroy({ where: { id: userIds } });
+
     await Poll_option.destroy({ where: { poll_id: pollId } });
     await Poll_setting.destroy({ where: { poll_id: pollId } });
     await Token.destroy({ where: { poll_id: pollId } });
     await Fixed_option.destroy({ where: { poll_id: pollId } });
     await Poll.destroy({ where: { id: pollId } });
-    //!sollen wir User auch löschen?
 
     res.status(200).send({
       code: 200,
       message: 'i. O.',
     });
   } catch (error) {
-    console.log(error);
     res.status(404).send({
       code: 404,
       message: 'Poll not found.',
     });
   }
 };
+
 
 
 const getPollStatistics = async (req, res) => {
@@ -448,7 +503,7 @@ const getPollStatistics = async (req, res) => {
       where: { poll_id: pollId },
       raw: true,
     });
-
+    //! the voted and worst become the id number of user that is in database and not the participants id
     // Group votes by option
     const votesByOption = votes.reduce((groups, vote) => {
       const groupId = vote.poll_option_id;
@@ -458,9 +513,9 @@ const getPollStatistics = async (req, res) => {
           worst: [],
         };
       }
-      groups[groupId].voted.push(vote.user_id);
+      groups[groupId].voted.push(vote.user_id-1); //!beginnt von 0 und nicht 1
       if (vote.worst) {
-        groups[groupId].worst.push(vote.user_id);
+        groups[groupId].worst.push(vote.user_id-1); //!beginnt von 0 und nicht 1
       }
       return groups;
     }, {});
@@ -518,7 +573,6 @@ const getPollStatistics = async (req, res) => {
     res.status(200).send(responseBody);
 
   } catch (error) {
-    console.log(error);
     res.status(500).send({ code: 500, message: "Internal server error" });
   }
 };
@@ -570,7 +624,6 @@ const getPollList = async (req, res) => {
 
     res.status(200).send(formattedPolls);
   } catch (error) {
-    console.log(error);
     res.status(500).send({ code: 500, message: "Internal server error" });
   }
 };
