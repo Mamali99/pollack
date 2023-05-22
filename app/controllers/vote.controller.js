@@ -14,7 +14,9 @@ const voteValidationRules = [
   body('owner.name').notEmpty().withMessage('Owner name is required'),
   body('choice').isArray({ min: 1 }).withMessage('At least one choice is required'),
   body('choice.*.id').isInt().withMessage('Choice id is required and should be an integer'),
+  body('choice.*.worst').optional().isBoolean().withMessage('If provided, choice worst should be a boolean'),
 ];
+
 
 // Add a new vote to the poll
 const addVote = async (req, res) => {
@@ -42,15 +44,16 @@ const addVote = async (req, res) => {
 
     const pollSettings = await Poll_setting.findOne({ where: { poll_id: poll.id } });
 
+
+
     if (pollSettings && pollSettings.voices !== undefined) {
       if (pollSettings.voices === 1 && choice.length > 1) {
-       
         throw new Error("The number of votes does not fit.");
       } else if (pollSettings.voices > 1 && choice.length > pollSettings.voices) {
-        console.log("zweite if")
         throw new Error('The number of votes does not fit.');
       }
     }
+
 
     if (pollSettings && pollSettings.worst !== true && choice.some(c => c.worst === true)) {
       throw new Error('Setting "worst" is disabled for this poll.');
@@ -61,6 +64,15 @@ const addVote = async (req, res) => {
     }
 
     let user = await User.findOne({ where: { name: owner.name } });
+
+    const worstVotes = await Vote.findAll({ where: { poll_id: poll.id, worst: true } });
+    if (worstVotes.length > 0 && choice.some(c => c.worst === true)) {
+      const error = new Error('A "worst" vote already exists');
+      error.code = 405;
+      throw error;
+    }
+
+
     if (!user) {
       user = await User.create({
         name: owner.name

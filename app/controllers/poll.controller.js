@@ -15,6 +15,8 @@ const User = db.users;
 const pollValidationRules = [
   body('title').notEmpty().withMessage('Title is required'),
   body('options').isArray({ min: 2 }).withMessage('At least two options are required'),
+  body('options.*.id').notEmpty().withMessage('Option id is required'),
+  body('options.*.text').notEmpty().withMessage('Option text is required'),
 ];
 
 
@@ -224,9 +226,14 @@ const pollUpdateValidationRules = [
 //     });
 //   }
 // };
+let count=0
 const updatePoll = async (req, res) => {
   const tokenValue = req.params.token;
   const { title, options, description, setting, fixed } = req.body;
+  console.log("\n\nupdatePoll is calling=================>   " + ++count)
+  console.log("\n\nsetting=================>   " + setting)
+  console.log("\n\nsetting.voices=================>   " + setting.voices)
+  console.log("\n\nsetting.worst=================>   " + setting.worst)
 
   // Check for validation errors
   const errors = validationResult(req);
@@ -513,9 +520,14 @@ const getPollStatistics = async (req, res) => {
           worst: [],
         };
       }
-      groups[groupId].voted.push(vote.user_id-1); //!beginnt von 0 und nicht 1
-      if (vote.worst) {
-        groups[groupId].worst.push(vote.user_id-1); //!beginnt von 0 und nicht 1
+      // groups[groupId].voted.push(vote.user_id-1); //!beginnt von 0 und nicht 1
+      // if (vote.worst) {
+      //   groups[groupId].worst.push(vote.user_id-1); //!beginnt von 0 und nicht 1
+      // }
+      if (!vote.worst) {
+        groups[groupId].voted.push(vote.user_id - 1); // Start from 0
+      } else {
+        groups[groupId].worst.push(vote.user_id - 1); // Start from 0
       }
       return groups;
     }, {});
