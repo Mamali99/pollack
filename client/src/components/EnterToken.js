@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Form, Card, Container, InputGroup } from 'react-bootstrap';
@@ -36,4 +35,3 @@ function EnterToken() {
 }
 
 export default EnterToken;
-

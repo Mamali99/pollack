@@ -3,6 +3,8 @@ import { Button, Form, Col, Row, Container, Modal } from 'react-bootstrap';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 
+
+//! Alle Validationen wie in AddPoll muss auch hier gemacht werden
 function PollUpdate() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -60,12 +62,7 @@ function PollUpdate() {
     setOptions(updatedOptions);
   };
 
-  // const addOption = () => {
-  //   setOptions([...options, { id: options.length + 1, text: '' }]);
-  // };
-  // const addOption = () => {
-  //   setOptions([...options, { id: Date.now(), text: '' }]);
-  // };
+  
   const addOption = () => {
     setOptions([...options, { id: options.length + 1, text: '' }]);
   };
@@ -81,6 +78,8 @@ function PollUpdate() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    
   
     const pollData = {
       title,

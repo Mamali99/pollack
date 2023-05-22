@@ -38,7 +38,6 @@ import Home from './pages/Home';
 import AddPoll from './pages/AddPoll';
 import Header from './components/Header'
 import AddVote from './pages/AddVote';
-import ShowPolls from './pages/ShowPolls';
 import Poll from './pages/Poll';
 import Vote from './pages/Vote';
 import PollDetail from './pages/PollDetail'
@@ -59,7 +58,6 @@ function App() {
           <Route path="/poll-update/:adminToken/:shareToken" element={<PollUpdate />} />
           <Route path="/addPoll" element={<AddPoll />} />
           <Route path="/addVote/:token" element={<AddVote />} />
-          <Route path="/showPolls" element={<ShowPolls />} />
         </Routes>
       </Container>
     </Router>
@@ -67,3 +65,4 @@ function App() {
 }
 
 export default App;
+

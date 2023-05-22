@@ -171,7 +171,7 @@
 // }
 // export default AddPoll;
 
-
+//! Die Validation für optionale Fälder und Defaulwerte muss noch gemacht werden
 import React, { useState } from 'react';
 import { Button, Form, Col, Row, Container, Modal, Card } from 'react-bootstrap';
 import axios from 'axios';
@@ -180,8 +180,8 @@ import { useNavigate } from 'react-router-dom';
 function AddPoll() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [options, setOptions] = useState([{ id: 1, text: '' }, { id: 2, text: '' }]);
-  const [setting, setSetting] = useState({ voices: 1, worst: false, deadline: '' });
+  const [options, setOptions] = useState([{ id: 182, text: '' }, { id: 183, text: '' }]);
+  const [setting, setSetting] = useState({ voices: 1, worst: false, deadline: '0000-00-00T00:00:00.000Z' });
   const [fixed, setFixed] = useState([0]);
   const [showModal, setShowModal] = useState(false);
   const [response, setResponse] = useState(null);
@@ -268,7 +268,6 @@ function AddPoll() {
             <Form.Group controlId="description">
               <Form.Label>Description</Form.Label>
               <Form.Control
-                required
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -330,7 +329,6 @@ function AddPoll() {
                 <Form.Group controlId="deadline">
                   <Form.Label>Deadline</Form.Label>
                   <Form.Control
-                    required
                     type="datetime-local"
                     value={setting.deadline}
                     onChange={(e) => setSetting({ ...setting, deadline: e.target.value })}
