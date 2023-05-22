@@ -360,6 +360,20 @@ const updateVote = async (req, res) => {
     const deletePromises = votesToDelete.map((vote) => vote.destroy());
     await Promise.all(deletePromises);
 
+    //!new eingefügt
+        // Update the 'worst' field for existing votes that are still in the choice
+        const votesToUpdate = existingVotes.filter((vote) => {
+          return choice.some(({ id }) => vote.poll_option_id === id);
+        });
+    
+        const updatePromises = votesToUpdate.map((vote) => {
+          const { id, worst } = choice.find(({ id }) => vote.poll_option_id === id);
+          vote.worst = worst || false;
+          return vote.save();
+        });
+    
+        await Promise.all(updatePromises);
+    //!bis hier
     // Create new votes for choices that didn't exist before
     const newVotesToCreate = choice.filter(({ id }) => {
       return !existingVotes.some((vote) => vote.poll_option_id === id);

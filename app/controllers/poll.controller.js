@@ -230,10 +230,10 @@ let count=0
 const updatePoll = async (req, res) => {
   const tokenValue = req.params.token;
   const { title, options, description, setting, fixed } = req.body;
-  console.log("\n\nupdatePoll is calling=================>   " + ++count)
-  console.log("\n\nsetting=================>   " + setting)
-  console.log("\n\nsetting.voices=================>   " + setting.voices)
-  console.log("\n\nsetting.worst=================>   " + setting.worst)
+  // console.log("\n\nupdatePoll is calling=================>   " + ++count)
+  // console.log("\n\nsetting=================>   " + setting)
+  // console.log("\n\nsetting.voices=================>   " + setting.voices)
+  // console.log("\n\nsetting.worst=================>   " + setting.worst)
 
   // Check for validation errors
   const errors = validationResult(req);
