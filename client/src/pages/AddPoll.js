@@ -204,19 +204,35 @@ function AddPoll() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-        // Check if all options are filled
-        if (options.some((option) => option.text === '')) {
-          alert('Please fill all options');
-          return;
-        }
- 
+         // Check if all options are filled
+    if (options.some((option) => option.text === '')) {
+      alert('Please fill all options');
+      return;
+    }
+
+    // Check if voices is a valid number
+    if (isNaN(setting.voices) || setting.voices < 1) {
+      alert('Please input a valid number of voices');
+      return;
+    }
+    // Check if fixed options are valid and replace empty with [0]
+    let validatedFixed = fixed;
+    if ((fixed.length === 1 && fixed[0] === 0)) {
+      validatedFixed = [0];
+    } else {
+      const uniqueFixed = Array.from(new Set(fixed));
+      if (uniqueFixed.some(id => id < 1 || id > options.length)) {
+        alert('Fixed options should be unique and correspond to valid options');
+        return;
+      }
+    }
 
     const pollData = {
       title,
       description,
       options,
       setting,
-      fixed,
+      fixed: validatedFixed,
     };
 
     try {

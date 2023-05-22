@@ -17,99 +17,6 @@ const pollValidationRules = [
 ];
 
 
-// const addPoll = async (req, res) => {
-//   const errors = validationResult(req);
-//   if (!errors.isEmpty()) {
-//     return res.status(405).json({ code: 405, message: 'Invalid input' });
-//   }
-
-//   const { title, description, options, setting, fixed } = req.body;
-
-//   //!befÜr ein Poll erstellt, muss man checken, ob alle andere fields richtig sind. sonst erstellt ein Teil von Poll
-//   try {
-//     const poll = await Poll.create({
-//       title,
-//       description,
-//     });
-
-//     const pollOptions = await Promise.all(
-//       options.map(option => Poll_option.create({ id: option.id, text: option.text, poll_id: poll.id }))
-//     );
-
-//     let pollSetting;
-//     if (setting) {
-//       pollSetting = await Poll_setting.create({
-//         ...setting,
-//         poll_id: poll.id
-//       });
-      
-//     }
-
-//     if (fixed && Array.isArray(fixed) && fixed.length > 0 && fixed[0] !== null && fixed[0] !== 0) {
-//       if (pollSetting && pollSetting.voices === 0) {
-//         const fixedOptions = await Promise.all(fixed.map(optionId => createFixedOption(poll, pollOptions, optionId)));
-//       } else if (fixed.includes(0)) {
-//         let fixed_option = await Fixed_option.create({
-//           poll_id: poll.id,
-//         });
-//       } else {
-//         if (pollSetting && fixed.length > pollSetting.voices) {
-//           throw new Error(`The number of fixed options exceeds the number of allowed voices.`);
-//         } else {
-//           const fixedOptions = await Promise.all(fixed.map(optionId => createFixedOption(poll, pollOptions, optionId)));
-//         }
-//       }
-//     }
-
-//     const adminTokenValue = crypto.randomBytes(16).toString("hex");
-//     const shareTokenValue = crypto.randomBytes(16).toString("hex");
-
-//     const adminToken = await Token.create({
-//       link: "admin",
-//       value: adminTokenValue,
-//       poll_id: poll.id,
-//       token_type: "admin"
-//     });
-
-//     const shareToken = await Token.create({
-//       link: "share",
-//       value: shareTokenValue,
-//       poll_id: poll.id,
-//       token_type: "share"
-//     });
-
-
-//     res.status(200).send({
-//       admin: {
-//         link: "admin", //! Richtige Linke für Frontend nutzen
-//         value: adminToken.value
-//       },
-//       share: {
-//         link: "share",
-//         value: shareToken.value
-//       }
-//     });
-
-//   } catch (error) {
-//     res.status(500).send({
-//       code: 500,
-//       message: 'Internal server error'
-//     });
-//   }
-// };
-
-// async function createFixedOption(poll, pollOptions, optionId) {
-//   const matchingOption = pollOptions.find(option => option.id === optionId);
-//   if (matchingOption) {
-//     return Fixed_option.create({
-//       poll_id: poll.id,
-//       option_id: matchingOption.id,
-//     });
-//   } else {
-//     throw new Error(`Fixed option with id ${optionId} does not match any created poll option.`);
-//   }
-// }
-
 const addPoll = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -118,13 +25,15 @@ const addPoll = async (req, res) => {
 
   const { title, description, options, setting, fixed } = req.body;
   
+  
   try {
     const pollResult = await db.sequelize.transaction(async (t) => {
       const poll = await Poll.create({
         title,
         description,
       }, { transaction: t });
-
+      
+      console.log("before options")
       const pollOptions = await Promise.all(
         options.map(option => Poll_option.create({ 
           id: option.id, 
@@ -132,6 +41,9 @@ const addPoll = async (req, res) => {
           poll_id: poll.id 
         }, { transaction: t }))
       );
+      console.log("after options")
+
+      console.log("before setting")
 
       if (setting) {
         await Poll_setting.create({
@@ -139,6 +51,7 @@ const addPoll = async (req, res) => {
           poll_id: poll.id
         }, { transaction: t });
       }
+      console.log("after setting")
       
       if (fixed && Array.isArray(fixed) && fixed.length > 0 && fixed[0] !== null && fixed[0] !== 0) {
         await Promise.all(fixed.map(optionId => createFixedOption(poll, pollOptions, optionId, t)));
