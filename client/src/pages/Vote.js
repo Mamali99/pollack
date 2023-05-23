@@ -25,6 +25,11 @@ function Vote() {
         alert('There was an error deleting the vote!');
       });
   }
+  const handleSubmitUpdate = (e) => {
+    e.preventDefault();
+    navigate(`/updateVote/${token}`);
+
+  }
 
   return (
     <Container fluid>
@@ -57,6 +62,11 @@ function Vote() {
               <Form onSubmit={handleSubmitDelete}>
                 <Button type="submit" variant="danger" block>
                   Delete Vote
+                </Button>
+              </Form>
+              <Form onSubmit={handleSubmitUpdate}>
+                <Button type="submit" variant="danger" block>
+                  Update Vote
                 </Button>
               </Form>
             </Card.Body>

@@ -44,6 +44,7 @@ import PollDetail from './pages/PollDetail'
 import PollUpdate from './pages/PollUpdate';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container } from 'react-bootstrap';
+import VoteUpdate from './pages/VoteUpdate';
 
 function App() {
   return (
@@ -58,6 +59,7 @@ function App() {
           <Route path="/poll-update/:adminToken/:shareToken" element={<PollUpdate />} />
           <Route path="/addPoll" element={<AddPoll />} />
           <Route path="/addVote/:token" element={<AddVote />} />
+          <Route path="/updateVote/:token" element={<VoteUpdate />} />
         </Routes>
       </Container>
     </Router>

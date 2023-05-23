@@ -51,6 +51,22 @@ const addPoll = async (req, res) => {
           poll_id: poll.id
         }, { transaction: t });
       }
+      // if (setting && setting.deadline) {
+      //   await Poll_setting.create(
+      //     {
+      //       ...setting,
+      //       poll_id: poll.id,
+      //     },
+      //     { transaction: t }
+      //   );
+      // } else {
+      //   await Poll_setting.create(
+      //     {
+      //       poll_id: poll.id,
+      //     },
+      //     { transaction: t }
+      //   );
+      // }
       console.log("after setting")
       
       if (fixed && Array.isArray(fixed) && fixed.length > 0 && fixed[0] !== null && fixed[0] !== 0) {
