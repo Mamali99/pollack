@@ -4,23 +4,36 @@ import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 
 
-//! Alle Validationen wie in AddPoll muss auch hier gemacht werden
-//! Wenn Voices auf 0 gesetzt ist, in update wird automatisch auf 1 stehen und nach dem Update bleibt trotzdem in backend auf 0
 function PollUpdate() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [options, setOptions] = useState([{ id: 1, text: '' }, { id: 2, text: '' }]);
   const [setting, setSetting] = useState({
-    voices: 1,
+    voices: 0,
     worst: false,
-    deadline: new Date().toISOString()
+    deadline: null
   });
   const [fixed, setFixed] = useState([0]);
   const [showModal, setShowModal] = useState(false);
   const [response, setResponse] = useState(null);
   const navigate = useNavigate();
   const { adminToken, shareToken } = useParams(); // Extracting tokens from URL parameters
-  
+
+  const pollOptionIds = []
+
+
+  const OptionIdsgenerator = (pollOptionIds) => {
+    let newOptionId;
+    const generateRandomNumber = () => {
+      return Math.floor(100 + Math.random() * 100000);
+    };
+    do {
+      newOptionId = generateRandomNumber();
+    } while (pollOptionIds.includes(newOptionId));
+    pollOptionIds.push(newOptionId);
+    return newOptionId;
+  }
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,10 +41,11 @@ function PollUpdate() {
         const response = await axios.get(`http://localhost:49715/poll/lack/${shareToken}`);
         setTitle(response.data.poll.body.title);
         setDescription(response.data.poll.body.description);
-        // map to only include the necessary fields and ensure sequential 'id's
-        const fetchedOptions = response.data.poll.body.options.map((option, index) => {
-          return { id: index + 1, text: option.text };
+        // map to only include the necessary fields and ensure the fetched 'id's
+        const fetchedOptions = response.data.poll.body.options.map((option) => {
+          return { id: option.id, text: option.text };
         });
+
         setOptions(fetchedOptions);
         // Only keep the necessary fields in 'setting'
         const fetchedSetting = {
@@ -47,10 +61,10 @@ function PollUpdate() {
         console.error(error);
       }
     };
-  
+
     fetchData();
   }, [shareToken]);
-  
+
 
   const handleClose = () => {
     setShowModal(false);
@@ -63,38 +77,63 @@ function PollUpdate() {
     setOptions(updatedOptions);
   };
 
-  
   const addOption = () => {
-    setOptions([...options, { id: options.length + 1, text: '' }]);
+    // Only generate a new id if the option doesn't have one
+    const newOptionId = options[options.length - 1]?.id || OptionIdsgenerator(pollOptionIds);
+    setOptions([...options, { id: newOptionId, text: '' }]);
   };
-  
 
   const handleFixedChange = (id, isChecked) => {
+    const existingOption = options.find(option => option.id === id);
+    // Use the existing id if the option has one, otherwise generate a new one
+    const newOptionId = existingOption?.id || OptionIdsgenerator(pollOptionIds);
     if (isChecked) {
-      setFixed([...fixed, id]);
+      setFixed([...fixed, newOptionId]);
     } else {
-      setFixed(fixed.filter(item => item !== id));
+      setFixed(fixed.filter(item => item !== newOptionId));
     }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    
-  
+    // Check if all options are filled
+    if (options.some((option) => option.text === '')) {
+      alert('Please fill all options');
+      return;
+    }
+
+    // Check if voices is a valid number
+    if (isNaN(setting.voices) || setting.voices < 0) {
+      alert('Please input a valid number of voices');
+      return;
+    }
+
+    // Check if fixed options are valid and replace empty with [0]
+    let validatedFixed = fixed;
+    if ((fixed[0] === 0) || fixed == null || fixed == undefined) {
+      validatedFixed = [0];
+    } 
+
+    if (setting.voices > options.length) {
+      alert('the number of allowed voices is more than existing options...');
+      return;
+    }
+
+    // { options.map((option, index) => (option.id = OptionIdsgenerator(pollOptionIds))) }
     const pollData = {
       title,
       description,
       options,
       setting,
-      fixed,
+      fixed: validatedFixed,
     };
-
     console.log(pollData)
-  
+
     try {
       const response = await axios.put(`http://localhost:49715/poll/lack/${adminToken}`, pollData);
-      
+
       if (response.status === 200) {
         setResponse({
           code: response.data.code,
@@ -117,7 +156,7 @@ function PollUpdate() {
       setShowModal(true);
     }
   };
-  
+
 
   return (
     <Container>
@@ -186,16 +225,16 @@ function PollUpdate() {
               <Form.Label>Deadline</Form.Label>
               <Form.Control
                 type="datetime-local"
-                value={new Date(setting.deadline).toISOString().slice(0, 16)}
-                onChange={(e) => setSetting({ ...setting, deadline: e.target.value })}
+                value={setting.deadline ? new Date(setting.deadline).toISOString().slice(0, 16) : ""}
+                onChange={(e) => setSetting({ ...setting, deadline: e.target.value ? e.target.value : null })}
               />
             </Form.Group>
+
           </Col>
         </Row>
-
         <Form.Group controlId="fixed">
           <Form.Label>Fixed</Form.Label>
-          {setting.voices > 1 && options.map((option, index) => (
+          {(setting.voices > 1 || setting.voices === 0 || setting.voices === null) && options.map((option, index) => (
             <Form.Check
               key={option.id}
               type="checkbox"
@@ -217,7 +256,6 @@ function PollUpdate() {
             </Form.Control>
           )}
         </Form.Group>
-
         <Button variant="primary" type="submit">
           Update Poll
         </Button>
