@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Form, Col, Row, Container, Modal } from 'react-bootstrap';
-import axios, { all } from 'axios';
+import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 
 
@@ -125,8 +125,6 @@ function PollUpdate() {
       alert('the number of allowed voices is more than existing options...');
       return;
     }
-
-    // { options.map((option, index) => (option.id = OptionIdsgenerator(pollOptionIds))) }
     const pollData = {
       title,
       description,
@@ -164,8 +162,10 @@ function PollUpdate() {
 
 
   return (
-    <Container>
+    <Container className='mt-5'>
+
       <Form onSubmit={handleSubmit}>
+        
         <Form.Group controlId="title">
           <Form.Label>Title</Form.Label>
           <Form.Control
@@ -185,12 +185,13 @@ function PollUpdate() {
             placeholder="Enter poll description"
           />
         </Form.Group>
+        
 
-        <Form.Group>
-          <Form.Label>Options</Form.Label>
+        <Form.Group className='mt-5'>
+          {/* <Form.Label className='mt-5'>Options</Form.Label> */}
           {options.map((option, index) => (
             <Form.Group key={option.id} controlId={`option${index}`}>
-              <Form.Label>Option {index + 1}</Form.Label>
+              <Form.Label className='mt-3'>Option {index + 1}</Form.Label>
               <Form.Control
                 type="text"
                 placeholder={`Option ${index + 1}`}
@@ -199,15 +200,15 @@ function PollUpdate() {
               />
             </Form.Group>
           ))}
-          <Button variant="secondary" onClick={addOption}>
+          <Button variant="secondary" onClick={addOption} className='mt-2'>
             Add Option
           </Button>
         </Form.Group>
 
-        <Row>
+        <Row className='mt-4'>
           <Col>
             <Form.Group controlId="voices">
-              <Form.Label>Voices</Form.Label>
+              <Form.Label >Voices</Form.Label>
               <Form.Control
                 type="number"
                 value={setting.voices}
@@ -238,7 +239,7 @@ function PollUpdate() {
           </Col>
         </Row>
         <Form.Group controlId="fixed">
-          <Form.Label>Fixed</Form.Label>
+          <Form.Label className='mt-4'>Fixed</Form.Label>
           {(setting.voices > 1 || setting.voices === 0 || setting.voices === null) && options.map((option, index) => (
             <Form.Check
               key={option.id}
@@ -261,7 +262,7 @@ function PollUpdate() {
             </Form.Control>
           )}
         </Form.Group>
-        <Button variant="primary" type="submit">
+        <Button variant="primary" type="submit" className='mt-4'>
           Update Poll
         </Button>
       </Form>
@@ -286,6 +287,7 @@ function PollUpdate() {
         </Modal.Footer>
       </Modal>
     </Container>
+    
   );
 }
 
