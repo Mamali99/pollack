@@ -7,7 +7,7 @@ function AddPoll() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [options, setOptions] = useState([{ id: 1, text: '' }, { id: 2, text: '' }]);
-  const [setting, setSetting] = useState({ voices: 1, worst: false, deadline: null });
+  const [setting, setSetting] = useState({ voices: 0, worst: false, deadline: null });
   const [fixed, setFixed] = useState([0]);
   const [showModal, setShowModal] = useState(false);
   const [response, setResponse] = useState(null);

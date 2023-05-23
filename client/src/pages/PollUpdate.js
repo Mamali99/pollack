@@ -14,6 +14,9 @@ function PollUpdate() {
     deadline: null
   });
   const [fixed, setFixed] = useState([0]);
+  const [participants, setParticipants] = useState([]);
+  const [votedOptions, setVotedOptions] = useState([]);
+
   const [showModal, setShowModal] = useState(false);
   const [response, setResponse] = useState(null);
   const navigate = useNavigate();
@@ -57,6 +60,15 @@ function PollUpdate() {
         // filter out 'null' values and ensure sequential 'id's in 'fixed'
         const fetchedFixed = response.data.poll.body.fixed.map(id => id !== null ? id : 0);
         setFixed(fetchedFixed);
+
+        // Set participants
+        const fetchedParticipants = response.data.participants.map(participant => participant.name);
+        setParticipants(fetchedParticipants);
+
+        // Set voted options
+        const fetchedVotedOptions = response.data.options.map(option => ({ voted: option.voted, worst: option.worst }));
+        setVotedOptions(fetchedVotedOptions);
+
       } catch (error) {
         console.error(error);
       }
@@ -114,9 +126,9 @@ function PollUpdate() {
     let validatedFixed = fixed;
     if ((fixed[0] === 0) || fixed == null || fixed == undefined) {
       validatedFixed = [0];
-    } 
-    
-    if (fixed[0] !== 0 &&  fixed.length > setting.voices){
+    }
+
+    if (fixed[0] !== 0 && fixed.length > setting.voices) {
       alert("you can't select more fixed options than allowed voices... ");
       return;
     }
@@ -125,6 +137,26 @@ function PollUpdate() {
       alert('the number of allowed voices is more than existing options...');
       return;
     }
+
+  //     // Check if each participant hasn't voted more than allowed
+  // const participantVotes = votedOptions.map(option => option.voted.length + option.worst.length);
+  // if (participantVotes.some(count => count > setting.voices)) {
+  //   alert('A participant has chosen more options than allowed');
+  //   return;
+  // }
+    // Check if each participant hasn't voted more than allowed
+    const participantVotes = new Array(participants.length).fill(0); // Array to store counts for each participant
+    votedOptions.forEach(option => {
+      option.voted.forEach(votedIndex => participantVotes[votedIndex]++);
+      option.worst.forEach(worstIndex => participantVotes[worstIndex]++);
+    });
+  
+    if (setting.voices!==0 && participantVotes.some(count => count > setting.voices)) {
+      alert('One or more participants has chosen more options than new allowed voices. You should handle it first.');
+      return;
+    }
+
+
     const pollData = {
       title,
       description,
@@ -165,7 +197,7 @@ function PollUpdate() {
     <Container className='mt-5'>
 
       <Form onSubmit={handleSubmit}>
-        
+
         <Form.Group controlId="title">
           <Form.Label>Title</Form.Label>
           <Form.Control
@@ -185,7 +217,7 @@ function PollUpdate() {
             placeholder="Enter poll description"
           />
         </Form.Group>
-        
+
 
         <Form.Group className='mt-5'>
           {/* <Form.Label className='mt-5'>Options</Form.Label> */}
@@ -287,7 +319,7 @@ function PollUpdate() {
         </Modal.Footer>
       </Modal>
     </Container>
-    
+
   );
 }
 
