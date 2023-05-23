@@ -33,7 +33,6 @@ const addPoll = async (req, res) => {
         description,
       }, { transaction: t });
       
-      console.log("before options")
       const pollOptions = await Promise.all(
         options.map(option => Poll_option.create({ 
           id: option.id, 
@@ -41,33 +40,19 @@ const addPoll = async (req, res) => {
           poll_id: poll.id 
         }, { transaction: t }))
       );
-      console.log("after options")
 
-      console.log("before setting")
 
       if (setting) {
+        // Check for null or undefined deadline, and set it as null if so
+        if (setting.deadline === null || setting.deadline === undefined) {
+          setting.deadline = null;
+        }
+        
         await Poll_setting.create({
           ...setting,
           poll_id: poll.id
         }, { transaction: t });
       }
-      // if (setting && setting.deadline) {
-      //   await Poll_setting.create(
-      //     {
-      //       ...setting,
-      //       poll_id: poll.id,
-      //     },
-      //     { transaction: t }
-      //   );
-      // } else {
-      //   await Poll_setting.create(
-      //     {
-      //       poll_id: poll.id,
-      //     },
-      //     { transaction: t }
-      //   );
-      // }
-      console.log("after setting")
       
       if (fixed && Array.isArray(fixed) && fixed.length > 0 && fixed[0] !== null && fixed[0] !== 0) {
         await Promise.all(fixed.map(optionId => createFixedOption(poll, pollOptions, optionId, t)));
