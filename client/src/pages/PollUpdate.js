@@ -138,12 +138,7 @@ function PollUpdate() {
       return;
     }
 
-  //     // Check if each participant hasn't voted more than allowed
-  // const participantVotes = votedOptions.map(option => option.voted.length + option.worst.length);
-  // if (participantVotes.some(count => count > setting.voices)) {
-  //   alert('A participant has chosen more options than allowed');
-  //   return;
-  // }
+ 
     // Check if each participant hasn't voted more than allowed
     const participantVotes = new Array(participants.length).fill(0); // Array to store counts for each participant
     votedOptions.forEach(option => {
@@ -151,10 +146,14 @@ function PollUpdate() {
       option.worst.forEach(worstIndex => participantVotes[worstIndex]++);
     });
   
-    if (setting.voices !== 0 && setting.voices!== null && participantVotes.some(count => count > setting.voices)) {
-      alert('One or more participants has chosen more options than new allowed voices. You should handle it first.');
-      return;
-    }
+    const exceededParticipants = participantVotes
+    .map((count, index) => (count > setting.voices && setting.voices !== 0 && setting.voices!== null) ? participants[index] : null)
+    .filter(participant => participant !== null);
+
+  if (exceededParticipants.length > 0) {
+    alert(`These participants have chosen more options than allowed: ${exceededParticipants.join(', ')}`);
+    return;
+  }
 
 
     const pollData = {
