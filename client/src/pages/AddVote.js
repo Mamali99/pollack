@@ -152,6 +152,13 @@ function AddVote() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const selectedChoices = choices.filter(({ isSelected }) => isSelected);
+
+    if (poll.poll.body.setting.voices && selectedChoices.length > poll.poll.body.setting.voices) {
+      alert('You have selected more choices than allowed.');
+      return;
+    }
   
     const voteData = {
       owner: {
