@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 
 //! Alle Validationen wie in AddPoll muss auch hier gemacht werden
+//! Wenn Voices auf 0 gesetzt ist, in update wird automatisch auf 1 stehen und nach dem Update bleibt trotzdem in backend auf 0
 function PollUpdate() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

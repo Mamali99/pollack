@@ -194,6 +194,11 @@ function AddVote() {
                 <Card.Text>
                   <strong>{poll.poll.body.title}</strong>
                   <p>{poll.poll.body.description}</p>
+                  <p>
+                    You can select up to{' '}
+                    {poll.poll.body.setting.voices || 'unlimited'}{' '}
+                    {poll.poll.body.setting.voices === 1 ? 'choice' : 'choices'}.
+                  </p>
                 </Card.Text>
                 {
                   choices.map((option) => (
@@ -203,7 +208,7 @@ function AddVote() {
                         label={option.text}
                         onChange={(e) => handleChoiceChange(option.id, e.target.checked, 'isSelected')}
                       />
-                      {poll.poll.body.setting.worst && ( // Modified this line
+                      {poll.poll.body.setting.worst && (
                         <Form.Check
                           type="checkbox"
                           label="Worst"
@@ -212,7 +217,6 @@ function AddVote() {
                       )}
                     </Form.Group>
                   ))
-                  
                 }
                 <Button variant="primary" type="submit" block>
                   Submit
