@@ -151,7 +151,7 @@ function PollUpdate() {
       option.worst.forEach(worstIndex => participantVotes[worstIndex]++);
     });
   
-    if (setting.voices!==0 && participantVotes.some(count => count > setting.voices)) {
+    if (setting.voices !== 0 && setting.voices!== null && participantVotes.some(count => count > setting.voices)) {
       alert('One or more participants has chosen more options than new allowed voices. You should handle it first.');
       return;
     }
