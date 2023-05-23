@@ -1,12 +1,19 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Form, Card, Container, Row, Col, Badge } from 'react-bootstrap';
+import { Button, Form, Card, Container, Modal, Col, Badge } from 'react-bootstrap';
 import axios from 'axios';
 
 function Vote() {
   const [token, setToken] = useState('');
   const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false); // modal state
+  const [modalMessage, setModalMessage] = useState(''); // message to be displayed in modal
+
+  const handleClose = () => {
+    setShowModal(false);
+    navigate('/'); // navigate back to home after modal closes
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -21,7 +28,8 @@ function Vote() {
       axios
         .delete(`http://localhost:49715/vote/lack/${token}`)
         .then(response => {
-          alert(response.data.message);
+          setModalMessage(response.data.message); // set modal message
+          setShowModal(true); // show modal on successful deletion
         })
         .catch(error => {
           console.error('There was an error deleting the vote!', error);
@@ -54,7 +62,7 @@ function Vote() {
                 type="text"
                 placeholder="Enter share/edit token"
                 value={token}
-                onChange={(e) => setToken(e.target.value)}               
+                onChange={(e) => setToken(e.target.value)}
               />
               <Form.Text className="text-muted">
                 Please enter the token you received for/from voting.
@@ -76,6 +84,17 @@ function Vote() {
               </Button>
             </Form>
           </Card.Body>
+          <Modal show={showModal} onHide={handleClose}>
+          <Modal.Header closeButton>
+            <Modal.Title>Vote Deleted Successfully</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>{modalMessage}</Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleClose}>
+              Close
+            </Button>
+          </Modal.Footer>
+        </Modal>
         </Card>
       </Col>
     </Container>
