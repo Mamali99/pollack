@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Form, Col, Row, Container, Modal } from 'react-bootstrap';
-import axios from 'axios';
+import axios, { all } from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 
 
@@ -115,6 +115,11 @@ function PollUpdate() {
     if ((fixed[0] === 0) || fixed == null || fixed == undefined) {
       validatedFixed = [0];
     } 
+    
+    if (fixed[0] !== 0 &&  fixed.length > setting.voices){
+      alert("you can't select more fixed options than allowed voices... ");
+      return;
+    }
 
     if (setting.voices > options.length) {
       alert('the number of allowed voices is more than existing options...');
