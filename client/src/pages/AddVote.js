@@ -115,8 +115,8 @@
 // export default AddVote;
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
-import { Form, Button, Alert, Card, Container, Col, Row } from 'react-bootstrap';
+import { useParams , useNavigate} from 'react-router-dom';
+import { Form, Button, Alert, Card, Container, Col, Modal } from 'react-bootstrap';
 
 function AddVote() {
   const { token } = useParams();
@@ -124,6 +124,8 @@ function AddVote() {
   const [poll, setPoll] = useState(null);
   const [choices, setChoices] = useState([]);
   const [response, setResponse] = useState(null);
+  const navigate = useNavigate(); // import useNavigate hook
+  const [showModal, setShowModal] = useState(false); // modal state
 
   useEffect(() => {
     const fetchPoll = async () => {
@@ -138,6 +140,12 @@ function AddVote() {
     };
     fetchPoll();
   }, [token]);
+
+    // Handle closing of modal
+    const handleClose = () => {
+      setShowModal(false);
+      navigate('/'); // navigate back to home after modal closes
+    }
 
   const handleChoiceChange = (id, value, field) => {
     const newChoices = choices.map((choice) => {
@@ -174,6 +182,7 @@ function AddVote() {
     try {
       const res = await axios.post(`http://localhost:49715/vote/lack/${token}`, voteData);
       setResponse(res.data);
+      setShowModal(true); // show modal on successful response
       
     } catch (error) {
       console.error(error);
@@ -189,7 +198,7 @@ function AddVote() {
             {poll ? (
               <Form onSubmit={handleSubmit}>
                 <Form.Group controlId="ownerName">
-                  <Form.Label>Owner Name</Form.Label>
+                  <Form.Label>Owner Name:</Form.Label>
                   <Form.Control
                     required
                     type="text"
@@ -235,10 +244,18 @@ function AddVote() {
           </Card.Body>
         </Card>
         {response && (
-          <Alert variant="success">
-            Vote submitted successfully. Edit link: {response.edit.link}
-          </Alert>
-        )}
+        <Modal show={showModal} onHide={handleClose}>
+          <Modal.Header closeButton>
+            <Modal.Title>Vote submitted successfully</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>Edit link: {response.edit.link}</Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleClose}>
+              Close
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      )}
       </Col>
     </Container>
   );
