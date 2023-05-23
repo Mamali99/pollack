@@ -180,7 +180,7 @@ import { useNavigate } from 'react-router-dom';
 function AddPoll() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [options, setOptions] = useState([{ id: 182, text: '' }, { id: 183, text: '' }]);
+  const [options, setOptions] = useState([{ id: 1, text: '' }, { id: 2, text: '' }]);
   const [setting, setSetting] = useState({ voices: 1, worst: false, deadline: '0000-00-00T00:00:00.000Z' });
   const [fixed, setFixed] = useState([0]);
   const [showModal, setShowModal] = useState(false);
