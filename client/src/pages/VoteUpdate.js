@@ -80,7 +80,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Form, Button, Alert, Card, Container, Col, Row } from 'react-bootstrap';
+import { Form, Button, Alert, Card, Container, Col, Modal  } from 'react-bootstrap';
 
 function VoteUpdate() {
   const { token } = useParams();
@@ -90,6 +90,9 @@ function VoteUpdate() {
   const [response, setResponse] = useState(null);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   useEffect(() => {
     const fetchVote = async () => {
@@ -101,35 +104,13 @@ function VoteUpdate() {
       } catch (error) {
         console.error(error);
         setError('An error occurred while fetching the vote details.');
+        setShowErrorModal(true);
       }
     };
     fetchVote();
   }, [token]);
 
-//   const handleOptionChange = (id, isChecked, field) => {
-//     let newChoices = [...choices]; // create a copy of the choices array
-    
-//     // find choice in array
-//     let choiceIndex = newChoices.findIndex(choice => choice.id === id);
-  
-//     if (choiceIndex !== -1) { // If choice is found
-//       if(isChecked) {
-//         // If checkbox is checked, just update the field
-//         newChoices[choiceIndex][field] = isChecked;
-//       } else {
-//         // If checkbox is unchecked, remove the choice from array
-//         newChoices = newChoices.filter(choice => choice.id !== id);
-//       }
-//     } else if(isChecked) { // If choice is not found and checkbox is checked
-//       // Add new choice to the array with both fields set to false initially
-//       let newChoice = { id: id, isSelected: false, worst: false };
-//       // Update the field that corresponds to the checkbox that was checked
-//       newChoice[field] = isChecked;
-//       newChoices.push(newChoice);
-//     }
-    
-//     setChoices(newChoices);
-// };
+
 const handleOptionChange = (id, isChecked, field) => {
   let newChoices = [...choices]; // create a copy of the choices array
 
@@ -160,10 +141,13 @@ const handleOptionChange = (id, isChecked, field) => {
 
   setChoices(newChoices);
 };
+const handleClose = () => {
+  setShowSuccessModal(false);
+  setShowErrorModal(false);
+  navigate('/'); // navigate back to home after modal closes
+}
 
   
-  
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -174,10 +158,11 @@ const handleOptionChange = (id, isChecked, field) => {
       });
       setResponse(res.data);
       setError(null);
-      navigate('/');
+      setShowSuccessModal(true);
+      // navigate('/');
     } catch (error) {
-      console.error(error);
       setError('An error occurred while updating the vote.');
+      setShowErrorModal(true);
     }
   };
 
@@ -237,17 +222,33 @@ const handleOptionChange = (id, isChecked, field) => {
             )}
           </Card.Body>
         </Card>
-        {response && response.edit && (
-          <Alert variant="success">
-            Vote updated successfully. Edit link: {response.edit.link}
-          </Alert>
-        )}
+        <Modal show={showSuccessModal} onHide={handleClose}>
+          <Modal.Header closeButton>
+            <Modal.Title>Success</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            Vote updated successfully.
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleClose}>
+              Close
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
-        {error && (
-          <Alert variant="danger">
+        <Modal show={showErrorModal} onHide={handleClose}>
+          <Modal.Header closeButton>
+            <Modal.Title>Error</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
             {error}
-          </Alert>
-        )}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleClose}>
+              Close
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </Col>
     </Container>
   );
