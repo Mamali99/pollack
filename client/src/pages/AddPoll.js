@@ -42,12 +42,24 @@ function AddPoll() {
   };
 
 
-  const handleOptionChange = (index, value) => {
-    const updatedOptions = [...options];
-    updatedOptions[index].text = value;
-    setOptions(updatedOptions);
-  };
+  // const handleOptionChange = (index, value) => {
+  //   const updatedOptions = [...options];
+  //   updatedOptions[index].text = value;
+  //   setOptions(updatedOptions);
+  // };
 
+  const handleOptionChange = (index, value) => {
+    // This regex matches any string that does not contain '<' or '>'.
+    const regex = /^[^<>]*$/;
+    if (regex.test(value)) {
+      const updatedOptions = [...options];
+      updatedOptions[index].text = value;
+      setOptions(updatedOptions);
+    } else {
+      alert('Invalid characters detected. Please avoid using "<" or ">".');
+    }
+  };
+  
   const addOption = () => {
     setOptions([...options, { id: OptionIdsgenerator(pollOptionIds), text: '' }]);
   };
