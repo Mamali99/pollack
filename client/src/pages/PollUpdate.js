@@ -83,6 +83,26 @@ function PollUpdate() {
     navigate('/');
   };
 
+  const removeOption = (index) => {
+    // Prevent removing an option if there are only two options
+    if (options.length <= 2) {
+      alert('There must be at least two options.');
+      return;
+    }
+
+    const updatedOptions = [...options];
+    const removedOptionId = updatedOptions[index].id;
+    updatedOptions.splice(index, 1);
+
+    setOptions(updatedOptions);
+
+    // Remove from fixed if it's there
+    if (fixed.includes(removedOptionId)) {
+      setFixed(fixed.filter(id => id !== removedOptionId));
+    }
+  };
+
+
   const handleOptionChange = (index, value) => {
     const updatedOptions = [...options];
     updatedOptions[index].text = value;
@@ -138,22 +158,22 @@ function PollUpdate() {
       return;
     }
 
- 
+
     // Check if each participant hasn't voted more than allowed
     const participantVotes = new Array(participants.length).fill(0); // Array to store counts for each participant
     votedOptions.forEach(option => {
       option.voted.forEach(votedIndex => participantVotes[votedIndex]++);
       option.worst.forEach(worstIndex => participantVotes[worstIndex]++);
     });
-  
-    const exceededParticipants = participantVotes
-    .map((count, index) => (count > setting.voices && setting.voices !== 0 && setting.voices!== null) ? participants[index] : null)
-    .filter(participant => participant !== null);
 
-  if (exceededParticipants.length > 0) {
-    alert(`These participants have chosen more options than allowed: ${exceededParticipants.join(', ')}`);
-    return;
-  }
+    const exceededParticipants = participantVotes
+      .map((count, index) => (count > setting.voices && setting.voices !== 0 && setting.voices !== null) ? participants[index] : null)
+      .filter(participant => participant !== null);
+
+    if (exceededParticipants.length > 0) {
+      alert(`These participants have chosen more options than allowed: ${exceededParticipants.join(', ')}`);
+      return;
+    }
 
 
     const pollData = {
@@ -221,15 +241,32 @@ function PollUpdate() {
         <Form.Group className='mt-5'>
           {/* <Form.Label className='mt-5'>Options</Form.Label> */}
           {options.map((option, index) => (
+            // <Form.Group key={option.id} controlId={`option${index}`}>
+            //   <Form.Label className='mt-3'>Option {index + 1}</Form.Label>
+            //   <Form.Control
+            //     type="text"
+            //     placeholder={`Option ${index + 1}`}
+            //     value={option.text}
+            //     onChange={(e) => handleOptionChange(index, e.target.value)}
+            //   />
+            // </Form.Group>
             <Form.Group key={option.id} controlId={`option${index}`}>
               <Form.Label className='mt-3'>Option {index + 1}</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder={`Option ${index + 1}`}
-                value={option.text}
-                onChange={(e) => handleOptionChange(index, e.target.value)}
-              />
+              <Row>
+                <Col>
+                  <Form.Control
+                    type="text"
+                    placeholder={`Option ${index + 1}`}
+                    value={option.text}
+                    onChange={(e) => handleOptionChange(index, e.target.value)}
+                  />
+                </Col>
+                <Col xs="auto">
+                  <Button variant="danger" onClick={() => removeOption(index)}>Delete</Button>
+                </Col>
+              </Row>
             </Form.Group>
+
           ))}
           <Button variant="secondary" onClick={addOption} className='mt-2'>
             Add Option
