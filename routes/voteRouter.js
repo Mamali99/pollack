@@ -1,4 +1,4 @@
-// const voteController = require("../app/controllers/vote.controller");
+
 const voteRouter = require("express").Router();
 const {addVote, findVote, updateVote, deleteVote,voteValidationRules} = require("../app/controllers/vote.controller");
 

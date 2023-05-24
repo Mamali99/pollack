@@ -76,7 +76,7 @@ const addPoll = async (req, res) => {
 
     res.status(200).send({
       admin: {
-        link: "admin", //! Richtige Linke für Frontend nutzen
+        link: "admin", 
         value: adminToken.value
       },
       share: {

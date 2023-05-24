@@ -42,11 +42,6 @@ function AddPoll() {
   };
 
 
-  // const handleOptionChange = (index, value) => {
-  //   const updatedOptions = [...options];
-  //   updatedOptions[index].text = value;
-  //   setOptions(updatedOptions);
-  // };
 
   const handleOptionChange = (index, value) => {
     // This regex matches any string that does not contain '<' or '>'.

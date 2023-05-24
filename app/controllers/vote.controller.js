@@ -65,12 +65,6 @@ const addVote = async (req, res) => {
 
     let user = await User.findOne({ where: { name: owner.name } });
 
-    // const worstVotes = await Vote.findAll({ where: { poll_id: poll.id, worst: true } });
-    // if (worstVotes.length > 0 && choice.some(c => c.worst === true)) {
-    //   const error = new Error('A "worst" vote already exists');
-    //   error.code = 405;
-    //   throw error;
-    // }
 
 
     if (!user) {

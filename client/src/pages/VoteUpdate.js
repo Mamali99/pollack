@@ -1,82 +1,4 @@
-// import React from 'react'
 
-// function VoteUpdate() {
-//   return (
-//     <div>VoteUpdate</div>
-//   )
-// }
-
-// export default VoteUpdate
-// import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
-// import { useParams } from 'react-router-dom';
-
-// function VoteUpdate() {
-//   const { token } = useParams();
-//   const [ownerName, setOwnerName] = useState('');
-//   const [poll, setPoll] = useState(null);
-//   const [choices, setChoices] = useState([]);
-//   const [response, setResponse] = useState(null);
-
-//   useEffect(() => {
-//     const fetchVote = async () => {
-//       try {
-//         const res = await axios.get(`http://localhost:49715/vote/lack/${token}`);
-//         setOwnerName(res.data.vote.owner.name);
-//         setPoll(res.data.poll.body);
-//         setChoices(res.data.vote.choice);
-//         console.log(res)
-//       } catch (error) {
-//         console.error(error);
-//       }
-//     };
-//     fetchVote();
-//   }, [token]);
-
-
-//   const handleOptionChange = (event, option) => {
-//   if (event.target.checked) {
-//     setChoices([...choices, { id: option.id, worst: false }]);
-//   } else {
-//     setChoices(choices.filter(choice => choice.id !== option.id));
-//   }
-// };
-
-// const handleSubmit = async (event) => {
-//     event.preventDefault();
-
-//     try {
-//       const res = await axios.put(`http://localhost:49715/vote/lack/${token}`, {
-//         owner: { name: ownerName },
-//         choice: choices,
-//       });
-//       setResponse(res.data);
-//     } catch (error) {
-//       console.error(error);
-//     }
-//   };
-
-
-//   return (
-//     <div>
-//       <form onSubmit={handleSubmit}>
-//         {poll && poll.options.map(option => (
-//           <label key={option.id}>
-//             <input 
-//               type="checkbox" 
-//               checked={choices.some(choice => choice.id === option.id)}
-//               onChange={(event) => handleOptionChange(event, option)}
-//             />
-//             {option.text}
-//           </label>
-//         ))}
-//         <button type="submit">Update Vote</button>
-//       </form>
-//     </div>
-//   );
-// }
-
-// export default VoteUpdate;
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -159,7 +81,6 @@ function VoteUpdate() {
       setResponse(res.data);
       setError(null);
       setShowSuccessModal(true);
-      // navigate('/');
     } catch (error) {
       setError('An error occurred while updating the vote.');
       setShowErrorModal(true);
@@ -193,26 +114,7 @@ function VoteUpdate() {
                     {poll.setting.voices === 1 ? 'choice' : 'choices'}.
                   </p>
                 </Card.Text>
-                {/* {
-                  poll.options.map((option) => (
-                    <Form.Group key={option.id}>
-                      <Form.Check
-                        type="checkbox"
-                        label={option.text}
-                        checked={choices.some(choice => choice.id === option.id)}
-                        onChange={(e) => handleOptionChange(option.id, e.target.checked, 'isSelected')}
-                      />
-                      {poll.setting && poll.setting.worst && (
-                        <Form.Check
-                          type="checkbox"
-                          label="Worst"
-                          checked={choices.some(choice => choice.id === option.id && choice.worst)}
-                          onChange={(e) => handleOptionChange(option.id, e.target.checked, 'worst')}
-                        />
-                      )}
-                    </Form.Group>
-                  ))
-                } */}
+
                 {poll.options.map((option) => (
                   <Card style={{ marginBottom: '10px' }} key={option.id}>
                     <Card.Body>

@@ -87,33 +87,13 @@ function PollUpdate() {
   }
   
   
-  
-  
-
 
   const handleClose = () => {
     setShowModal(false);
     navigate('/');
   };
 
-  // const removeOption = (index) => {
-  //   // Prevent removing an option if there are only two options
-  //   if (options.length <= 2) {
-  //     alert('There must be at least two options.');
-  //     return;
-  //   }
 
-  //   const updatedOptions = [...options];
-  //   const removedOptionId = updatedOptions[index].id;
-  //   updatedOptions.splice(index, 1);
-
-  //   setOptions(updatedOptions);
-
-  //   // Remove from fixed if it's there
-  //   if (fixed.includes(removedOptionId)) {
-  //     setFixed(fixed.filter(id => id !== removedOptionId));
-  //   }
-  // };
   const removeOption = (index) => {
     // Prevent removing an option if there are only two options
     if (options.length <= 2) {

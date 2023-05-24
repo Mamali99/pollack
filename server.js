@@ -5,7 +5,7 @@ const app = express();
 
 
 const corOptions = {
-  origin: 'http://localhost:3000' //!port muss 49715 sein
+  origin: 'http://localhost:3000' 
 }
 
 
