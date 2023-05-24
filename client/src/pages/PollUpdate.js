@@ -111,7 +111,7 @@ function PollUpdate() {
 
   const addOption = () => {
     // Only generate a new id if the option doesn't have one
-    const newOptionId = options[options.length - 1]?.id || OptionIdsgenerator(pollOptionIds);
+    const newOptionId = OptionIdsgenerator(pollOptionIds);
     setOptions([...options, { id: newOptionId, text: '' }]);
   };
 
@@ -241,15 +241,6 @@ function PollUpdate() {
         <Form.Group className='mt-5'>
           {/* <Form.Label className='mt-5'>Options</Form.Label> */}
           {options.map((option, index) => (
-            // <Form.Group key={option.id} controlId={`option${index}`}>
-            //   <Form.Label className='mt-3'>Option {index + 1}</Form.Label>
-            //   <Form.Control
-            //     type="text"
-            //     placeholder={`Option ${index + 1}`}
-            //     value={option.text}
-            //     onChange={(e) => handleOptionChange(index, e.target.value)}
-            //   />
-            // </Form.Group>
             <Form.Group key={option.id} controlId={`option${index}`}>
               <Form.Label className='mt-3'>Option {index + 1}</Form.Label>
               <Row>
