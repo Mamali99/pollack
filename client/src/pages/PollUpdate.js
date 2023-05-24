@@ -77,37 +77,70 @@ function PollUpdate() {
     fetchData();
   }, [shareToken]);
 
+  const isOptionChosen = (optionIndex) => {
+    if (optionIndex < 0 || optionIndex >= votedOptions.length) {
+      console.error(`Option with index ${optionIndex} doesn't exist.`);
+      return false;
+    }
+    
+    return votedOptions[optionIndex].voted.length > 0 || votedOptions[optionIndex].worst.length > 0;
+  }
+  
+  
+  
+  
+
 
   const handleClose = () => {
     setShowModal(false);
     navigate('/');
   };
 
+  // const removeOption = (index) => {
+  //   // Prevent removing an option if there are only two options
+  //   if (options.length <= 2) {
+  //     alert('There must be at least two options.');
+  //     return;
+  //   }
+
+  //   const updatedOptions = [...options];
+  //   const removedOptionId = updatedOptions[index].id;
+  //   updatedOptions.splice(index, 1);
+
+  //   setOptions(updatedOptions);
+
+  //   // Remove from fixed if it's there
+  //   if (fixed.includes(removedOptionId)) {
+  //     setFixed(fixed.filter(id => id !== removedOptionId));
+  //   }
+  // };
   const removeOption = (index) => {
     // Prevent removing an option if there are only two options
     if (options.length <= 2) {
       alert('There must be at least two options.');
       return;
     }
-
+  
     const updatedOptions = [...options];
     const removedOptionId = updatedOptions[index].id;
+  
+ // Check if this option is chosen by any participant
+if (isOptionChosen(index)) {
+  const confirmDelete = window.confirm('This option is already chosen by a participant. Are you sure you want to delete it?');
+  if (!confirmDelete) {
+    return;
+  }
+}
     updatedOptions.splice(index, 1);
-
     setOptions(updatedOptions);
-
+  
     // Remove from fixed if it's there
     if (fixed.includes(removedOptionId)) {
       setFixed(fixed.filter(id => id !== removedOptionId));
     }
   };
+  
 
-
-  // const handleOptionChange = (index, value) => {
-  //   const updatedOptions = [...options];
-  //   updatedOptions[index].text = value;
-  //   setOptions(updatedOptions);
-  // };
   const handleOptionChange = (index, value) => {
     // This regex matches any string that does not contain '<' or '>'.
     const regex = /^[^<>]*$/;
@@ -136,7 +169,6 @@ function PollUpdate() {
       setFixed(fixed.filter(item => item !== newOptionId));
     }
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
