@@ -80,7 +80,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Form, Button, Alert, Card, Container, Col, Modal  } from 'react-bootstrap';
+import { Form, Button, Alert, Card, Container, Col, Modal } from 'react-bootstrap';
 
 function VoteUpdate() {
   const { token } = useParams();
@@ -111,43 +111,43 @@ function VoteUpdate() {
   }, [token]);
 
 
-const handleOptionChange = (id, isChecked, field) => {
-  let newChoices = [...choices]; // create a copy of the choices array
+  const handleOptionChange = (id, isChecked, field) => {
+    let newChoices = [...choices]; // create a copy of the choices array
 
-  // find choice in array
-  let choiceIndex = newChoices.findIndex(choice => choice.id === id);
+    // find choice in array
+    let choiceIndex = newChoices.findIndex(choice => choice.id === id);
 
-  if (choiceIndex !== -1) { // If choice is found
-    if(isChecked) {
-      // If checkbox is checked, just update the field
-      newChoices[choiceIndex][field] = isChecked;
-    } else {
-      // If checkbox is unchecked, remove the choice from array
-      newChoices = newChoices.filter(choice => choice.id !== id);
+    if (choiceIndex !== -1) { // If choice is found
+      if (isChecked) {
+        // If checkbox is checked, just update the field
+        newChoices[choiceIndex][field] = isChecked;
+      } else {
+        // If checkbox is unchecked, remove the choice from array
+        newChoices = newChoices.filter(choice => choice.id !== id);
+      }
+    } else if (isChecked) { // If choice is not found and checkbox is checked
+      // Check if adding a new choice would exceed the limit
+      if (poll.setting.voices === 0 || poll.setting.voices === null || newChoices.length < poll.setting.voices) {
+        // Add new choice to the array with both fields set to false initially
+        let newChoice = { id: id, isSelected: false, worst: false };
+        // Update the field that corresponds to the checkbox that was checked
+        newChoice[field] = isChecked;
+        newChoices.push(newChoice);
+      } else {
+        alert(`You can only select up to ${poll.setting.voices} choices.`);
+        return;
+      }
     }
-  } else if(isChecked) { // If choice is not found and checkbox is checked
-    // Check if adding a new choice would exceed the limit
-    if (poll.setting.voices === 0 || poll.setting.voices === null || newChoices.length < poll.setting.voices) {
-      // Add new choice to the array with both fields set to false initially
-      let newChoice = { id: id, isSelected: false, worst: false };
-      // Update the field that corresponds to the checkbox that was checked
-      newChoice[field] = isChecked;
-      newChoices.push(newChoice);
-    } else {
-      alert(`You can only select up to ${poll.setting.voices} choices.`);
-      return;
-    }
+
+    setChoices(newChoices);
+  };
+  const handleClose = () => {
+    setShowSuccessModal(false);
+    setShowErrorModal(false);
+    navigate('/'); // navigate back to home after modal closes
   }
 
-  setChoices(newChoices);
-};
-const handleClose = () => {
-  setShowSuccessModal(false);
-  setShowErrorModal(false);
-  navigate('/'); // navigate back to home after modal closes
-}
 
-  
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -193,7 +193,7 @@ const handleClose = () => {
                     {poll.setting.voices === 1 ? 'choice' : 'choices'}.
                   </p>
                 </Card.Text>
-                {
+                {/* {
                   poll.options.map((option) => (
                     <Form.Group key={option.id}>
                       <Form.Check
@@ -212,7 +212,31 @@ const handleClose = () => {
                       )}
                     </Form.Group>
                   ))
-                }
+                } */}
+                {poll.options.map((option) => (
+                  <Card style={{ marginBottom: '10px' }} key={option.id}>
+                    <Card.Body>
+                      <Form.Group style={{ display: 'flex', alignItems: 'center' }}>
+                        <Form.Check
+                          type="checkbox"
+                          label={option.text}
+                          style={{ marginRight: '10px' }}
+                          checked={choices.some(choice => choice.id === option.id)}
+                          onChange={(e) => handleOptionChange(option.id, e.target.checked, 'isSelected')}
+                        />
+                        {poll.setting && poll.setting.worst && (
+                          <Form.Check
+                            type="checkbox"
+                            label="Worst"
+                            checked={choices.some(choice => choice.id === option.id && choice.worst)}
+                            onChange={(e) => handleOptionChange(option.id, e.target.checked, 'worst')}
+                          />
+                        )}
+                      </Form.Group>
+                    </Card.Body>
+                  </Card>
+                ))}
+
                 <Button variant="primary" type="submit" block>
                   Update Vote
                 </Button>

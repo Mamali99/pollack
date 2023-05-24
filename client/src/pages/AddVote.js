@@ -232,38 +232,30 @@ function AddVote() {
                     {poll.poll.body.setting.voices === 1 ? 'choice' : 'choices'}.
                   </p>
                 </Card.Text>
-                {
-                  choices.map((option) => (
-                    <Form.Group key={option.id}>
-                      {/* <Form.Check
-                        type="checkbox"
-                        label={option.text}
-                        onChange={(e) => handleChoiceChange(option.id, e.target.checked, 'isSelected')}
-                      /> */}
-                      <Form.Check
-                        type="checkbox"
-                        label={option.text}
-                        key={`${option.id}-isSelected`}
-                        checked={option.isSelected}
-                        onChange={(e) => handleChoiceChange(option.id, e.target.checked, 'isSelected')}
-                      />
-                      {poll.poll.body.setting.worst && (
-                        // <Form.Check
-                        //   type="checkbox"
-                        //   label="Worst"
-                        //   onChange={(e) => handleChoiceChange(option.id, e.target.checked, 'worst')}
-                        // />
+                {choices.map((option) => (
+                  <Card style={{ marginBottom: '10px' }} key={option.id}>
+                    <Card.Body>
+                      <Form.Group style={{ display: 'flex', alignItems: 'center' }}>
                         <Form.Check
                           type="checkbox"
-                          label="Worst"
-                          key={`${option.id}-worst`}
-                          checked={option.worst}
-                          onChange={(e) => handleChoiceChange(option.id, e.target.checked, 'worst')}
+                          label={option.text}
+                          style={{ marginRight: '10px' }}
+                          checked={option.isSelected}
+                          onChange={(e) => handleChoiceChange(option.id, e.target.checked, 'isSelected')}
                         />
-                      )}
-                    </Form.Group>
-                  ))
-                }
+                        {poll.poll.body.setting.worst && (
+                          <Form.Check
+                            type="checkbox"
+                            label="Worst"
+                            checked={option.worst}
+                            onChange={(e) => handleChoiceChange(option.id, e.target.checked, 'worst')}
+                          />
+                        )}
+                      </Form.Group>
+                    </Card.Body>
+                  </Card>
+                ))}
+
                 <Button variant="primary" type="submit" block>
                   Submit
                 </Button>
