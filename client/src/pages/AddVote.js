@@ -41,7 +41,7 @@
 
 //     // Filter out unselected choices
 //     const selectedChoices = choices.filter(choice => choice.isSelected);
-  
+
 //     const voteData = {
 //       owner: {
 //         name: ownerName,
@@ -54,7 +54,7 @@
 //     try {
 //       const res = await axios.post(`http://localhost:49715/vote/lack/${token}`, voteData);
 //       setResponse(res.data);
-      
+
 //     } catch (error) {
 //       console.error(error);
 //     }
@@ -115,7 +115,7 @@
 // export default AddVote;
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useParams , useNavigate} from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Form, Button, Alert, Card, Container, Col, Modal } from 'react-bootstrap';
 
 function AddVote() {
@@ -141,22 +141,38 @@ function AddVote() {
     fetchPoll();
   }, [token]);
 
-    // Handle closing of modal
-    const handleClose = () => {
-      setShowModal(false);
-      navigate('/'); // navigate back to home after modal closes
-    }
+  // Handle closing of modal
+  const handleClose = () => {
+    setShowModal(false);
+    navigate('/'); // navigate back to home after modal closes
+  }
 
+  // const handleChoiceChange = (id, value, field) => {
+  //   const newChoices = choices.map((choice) => {
+  //     if (choice.id === id) {
+  //       return { ...choice, [field]: value };
+  //     }
+  //     return choice;
+  //   });
+  //   setChoices(newChoices);
+  //   console.log(newChoices)
+  // };
   const handleChoiceChange = (id, value, field) => {
     const newChoices = choices.map((choice) => {
       if (choice.id === id) {
+        if (field === 'worst' && !choice.isSelected && value) {
+          alert('You must select the option first before marking it as worst.');
+          return { ...choice, worst: false };
+        }
         return { ...choice, [field]: value };
       }
       return choice;
     });
     setChoices(newChoices);
-    console.log(newChoices)
+    console.log(newChoices);
   };
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -167,23 +183,23 @@ function AddVote() {
       alert('You have selected more choices than allowed.');
       return;
     }
-  
+
     const voteData = {
       owner: {
         name: ownerName,
       },
       choice: choices
         .filter(({ isSelected }) => isSelected)
-        .map(({id, worst}) => ({id, worst})),
+        .map(({ id, worst }) => ({ id, worst })),
     };
-    
+
     console.log(voteData)
 
     try {
       const res = await axios.post(`http://localhost:49715/vote/lack/${token}`, voteData);
       setResponse(res.data);
       setShowModal(true); // show modal on successful response
-      
+
     } catch (error) {
       console.error(error);
     }
@@ -219,15 +235,29 @@ function AddVote() {
                 {
                   choices.map((option) => (
                     <Form.Group key={option.id}>
-                      <Form.Check
+                      {/* <Form.Check
                         type="checkbox"
                         label={option.text}
                         onChange={(e) => handleChoiceChange(option.id, e.target.checked, 'isSelected')}
+                      /> */}
+                      <Form.Check
+                        type="checkbox"
+                        label={option.text}
+                        key={`${option.id}-isSelected`}
+                        checked={option.isSelected}
+                        onChange={(e) => handleChoiceChange(option.id, e.target.checked, 'isSelected')}
                       />
                       {poll.poll.body.setting.worst && (
+                        // <Form.Check
+                        //   type="checkbox"
+                        //   label="Worst"
+                        //   onChange={(e) => handleChoiceChange(option.id, e.target.checked, 'worst')}
+                        // />
                         <Form.Check
                           type="checkbox"
                           label="Worst"
+                          key={`${option.id}-worst`}
+                          checked={option.worst}
                           onChange={(e) => handleChoiceChange(option.id, e.target.checked, 'worst')}
                         />
                       )}
@@ -244,18 +274,18 @@ function AddVote() {
           </Card.Body>
         </Card>
         {response && (
-        <Modal show={showModal} onHide={handleClose}>
-          <Modal.Header closeButton>
-            <Modal.Title>Vote submitted successfully</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>Edit link: {response.edit.link}</Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={handleClose}>
-              Close
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      )}
+          <Modal show={showModal} onHide={handleClose}>
+            <Modal.Header closeButton>
+              <Modal.Title>Vote submitted successfully</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>Edit link: {response.edit.link}</Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={handleClose}>
+                Close
+              </Button>
+            </Modal.Footer>
+          </Modal>
+        )}
       </Col>
     </Container>
   );
