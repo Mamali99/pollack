@@ -18,19 +18,29 @@ function AddPoll() {
     navigate('/');
   };
 
-  
-    const pollOptionIds = []
-    const OptionIdsgenerator=(pollOptionIds) => {
-      let newOptionId;
-      const generateRandomNumber = () => {
-        return Math.floor(100+Math.random() * 100000);
-      };
-      do {
-        newOptionId = generateRandomNumber();
-      }while(pollOptionIds.includes(newOptionId));
-      pollOptionIds.push(newOptionId);
-      return newOptionId;
+
+  const pollOptionIds = []
+  const OptionIdsgenerator = (pollOptionIds) => {
+    let newOptionId;
+    const generateRandomNumber = () => {
+      return Math.floor(100 + Math.random() * 100000);
+    };
+    do {
+      newOptionId = generateRandomNumber();
+    } while (pollOptionIds.includes(newOptionId));
+    pollOptionIds.push(newOptionId);
+    return newOptionId;
+  }
+
+  const deleteOption = (id) => {
+    if (options.length <= 2) {
+      alert('There must be at least two options.');
+      return;
     }
+    const updatedOptions = options.filter((option) => option.id !== id);
+    setOptions(updatedOptions);
+  };
+
 
   const handleOptionChange = (index, value) => {
     const updatedOptions = [...options];
@@ -38,13 +48,13 @@ function AddPoll() {
     setOptions(updatedOptions);
   };
 
-    const addOption = () => {
-    setOptions([...options, { id: options.length + 1, text: '' }]);
+  const addOption = () => {
+    setOptions([...options, { id: OptionIdsgenerator(pollOptionIds), text: '' }]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-         // Check if all options are filled
+    // Check if all options are filled
     if (options.some((option) => option.text === '')) {
       alert('Please fill all options');
       return;
@@ -66,7 +76,8 @@ function AddPoll() {
         return;
       }
     }
-    {options.map((option, index) => ( option.id = OptionIdsgenerator(pollOptionIds)))}
+    // { options.map((option, index) => (option.id = OptionIdsgenerator(pollOptionIds))) }
+
     const pollData = {
       title,
       description,
@@ -116,25 +127,33 @@ function AddPoll() {
             </Form.Group>
           </Card.Body>
         </Card>
-        
+
         <Card className="mb-4">
           <Card.Header as="h5">Options</Card.Header>
           <Card.Body>
-            
             {options.map((option, index) => (
-             <div>
-              
-              <Form.Group key={option.id} controlId={`option${index}`}>
-                <Form.Label>Option {index + 1}</Form.Label>
-                <Form.Control
-                  required
-                  type="text"
-                  placeholder={`Option ${index + 1}`}
-                  value={option.text}
-                  onChange={(e) => handleOptionChange(index, e.target.value)}
-                />
-              </Form.Group>
-            </div>))}
+              <div key={option.id}>
+                <Form.Group controlId={`option${index}`}>
+                  <Form.Label>Option {index + 1}</Form.Label>
+                  <Row>
+                    <Col>
+                      <Form.Control
+                        required
+                        type="text"
+                        placeholder={`Option ${index + 1}`}
+                        value={option.text}
+                        onChange={(e) => handleOptionChange(index, e.target.value)}
+                      />
+                    </Col>
+                    <Col xs="auto">
+                      <Button variant="danger" onClick={() => deleteOption(option.id)}>
+                        X
+                      </Button>
+                    </Col>
+                  </Row>
+                </Form.Group>
+              </div>
+            ))}
             <Button variant="secondary" onClick={addOption}>
               Add Option
             </Button>
@@ -172,7 +191,7 @@ function AddPoll() {
                 <Form.Group controlId="deadline">
                   <Form.Label>Deadline</Form.Label>
                   <Form.Control
-                    
+
                     type="datetime-local"
                     value={setting.deadline}
                     onChange={(e) => setSetting({ ...setting, deadline: e.target.value })}

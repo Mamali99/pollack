@@ -253,7 +253,7 @@ function PollUpdate() {
                   />
                 </Col>
                 <Col xs="auto">
-                  <Button variant="danger" onClick={() => removeOption(index)}>Delete</Button>
+                  <Button variant="danger" onClick={() => removeOption(index)}>X</Button>
                 </Col>
               </Row>
             </Form.Group>
