@@ -100,6 +100,7 @@ function PollUpdate() {
     if (fixed.includes(removedOptionId)) {
       setFixed(fixed.filter(id => id !== removedOptionId));
     }
+    
   };
 
 

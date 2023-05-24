@@ -76,7 +76,7 @@ function AddPoll() {
         return;
       }
     }
-    // { options.map((option, index) => (option.id = OptionIdsgenerator(pollOptionIds))) }
+    { options.map((option, index) => (option.id = OptionIdsgenerator(pollOptionIds))) }
 
     const pollData = {
       title,
